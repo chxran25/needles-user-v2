@@ -1,75 +1,85 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+// File: app/(tabs)/index.tsx
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import { ScrollView, View, Text, TextInput, Image, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
+import BoutiqueCard from '@/components/boutique/BoutiqueCard';
+import { useRouter } from 'expo-router';
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
-  );
-}
+    const [search, setSearch] = useState('');
+    const router = useRouter();
 
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-});
+    const boutiques = [
+        {
+            id: 'tattva-fashions',
+            name: 'Tattva Fashions',
+            tags: ['Lehengas', 'Blouses', 'Dresses'],
+            location: 'Miyapur, Hyderabad',
+            image: 'https://via.placeholder.com/300x160?text=Boutique',
+        },
+        {
+            id: 'miyapur-store',
+            name: 'Miyapur Store',
+            tags: ['Sarees', 'Kurtis', 'Kidswear'],
+            location: 'Miyapur, Hyderabad',
+            image: 'https://via.placeholder.com/300x160?text=Fashion+Store',
+        },
+        {
+            id: 'blouse-haven',
+            name: 'Blouse Haven',
+            tags: ['Blouses', 'Custom Fit'],
+            location: 'Kukatpally, Hyderabad',
+            image: 'https://via.placeholder.com/300x160?text=Blouse+Haven',
+        },
+        {
+            id: 'lehenga-leaf',
+            name: 'Lehenga Leaf',
+            tags: ['Lehengas', 'Bridal'],
+            location: 'Ameerpet, Hyderabad',
+            image: 'https://via.placeholder.com/300x160?text=Lehenga+Leaf',
+        },
+        {
+            id: 'saree-studio',
+            name: 'Saree Studio',
+            tags: ['Sarees', 'Traditional'],
+            location: 'Banjara Hills, Hyderabad',
+            image: 'https://via.placeholder.com/300x160?text=Saree+Studio',
+        },
+    ];
+
+    return (
+        <ScrollView className="flex-1 bg-[#FFF2D7] px-4 pt-12">
+            {/* Search Bar */}
+            <TouchableOpacity
+                onPress={() => router.push('/search')}
+                className="flex-row items-center bg-white rounded-full px-4 py-2 shadow-sm mb-4"
+                activeOpacity={0.9}
+            >
+                <Ionicons name="search" size={20} color="gray" />
+                <Text className="flex-1 ml-2 text-sm text-gray-400">
+                    Search for a Design or Boutique
+                </Text>
+                <Ionicons name="mic-outline" size={20} color="gray" />
+            </TouchableOpacity>
+
+            {/* Banner */}
+            <View className="mb-6">
+                <Image
+                    source={{ uri: 'https://via.placeholder.com/300x140?text=Antarctica+Expedition' }}
+                    className="w-full h-36 rounded-xl"
+                    resizeMode="cover"
+                />
+            </View>
+
+            {/* Recommended Section */}
+            <Text className="text-lg font-semibold mb-2">Recommended</Text>
+
+            <View className="gap-4 mb-10">
+                {boutiques.map((boutique) => (
+                    <BoutiqueCard key={boutique.id} {...boutique} />
+                ))}
+            </View>
+        </ScrollView>
+    );
+}
