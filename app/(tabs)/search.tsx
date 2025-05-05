@@ -1,8 +1,19 @@
 // File: app/(tabs)/search.tsx
 
-import { View, Text, TextInput, ScrollView, TouchableOpacity } from 'react-native';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import {
+    View,
+    Text,
+    TextInput,
+    ScrollView,
+    TouchableOpacity,
+    KeyboardAvoidingView,
+    Platform,
+    Keyboard
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLocalSearchParams } from 'expo-router';
 import BoutiqueCard from '@/components/boutique/BoutiqueCard';
 
 const sampleResults = [
@@ -46,6 +57,17 @@ const sampleResults = [
 export default function SearchScreen() {
     const [search, setSearch] = useState('');
     const [selectedTag, setSelectedTag] = useState('');
+    const inputRef = useRef<TextInput>(null);
+    const { autoFocus } = useLocalSearchParams();
+
+    useEffect(() => {
+        if (autoFocus === 'true') {
+            const timer = setTimeout(() => {
+                inputRef.current?.focus();
+            }, 300);
+            return () => clearTimeout(timer);
+        }
+    }, [autoFocus]);
 
     const filteredResults = sampleResults.filter(
         (item) =>
@@ -54,50 +76,62 @@ export default function SearchScreen() {
     );
 
     return (
-        <ScrollView className="flex-1 bg-[#FFF2D7] px-4 pt-10">
-            {/* Search Bar */}
-            <View className="flex-row items-center bg-white rounded-full px-4 py-2 shadow-sm mb-4">
-                <Ionicons name="search" size={20} color="gray" />
-                <TextInput
-                    className="flex-1 ml-2 text-sm"
-                    placeholder="Search for a Boutique or Style"
-                    value={search}
-                    onChangeText={setSearch}
-                />
-                <Ionicons name="mic-outline" size={20} color="gray" />
-            </View>
+        <SafeAreaView className="flex-1 bg-[#FFF2D7]">
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                className="flex-1"
+            >
+                <ScrollView
+                    className="flex-1 px-4 pt-10"
+                    keyboardShouldPersistTaps="handled"
+                >
+                    {/* Search Bar */}
+                    <View className="flex-row items-center bg-white rounded-full px-4 py-2 shadow-sm mb-4">
+                        <Ionicons name="search" size={20} color="gray" />
+                        <TextInput
+                            ref={inputRef}
+                            className="flex-1 ml-2 text-sm"
+                            placeholder="Search for a Boutique or Style"
+                            value={search}
+                            onChangeText={setSearch}
+                            returnKeyType="search"
+                        />
+                        <Ionicons name="mic-outline" size={20} color="gray" />
+                    </View>
 
-            {/* Tag Filters */}
-            <View className="flex-row flex-wrap gap-2 mb-6">
-                {["Lehengas", "Blouses", "Sarees", "Kurtis", "Bridal"].map((tag) => (
-                    <TouchableOpacity
-                        key={tag}
-                        onPress={() => setSelectedTag(tag === selectedTag ? '' : tag)}
-                        className={`px-3 py-1 rounded-full ${
-                            selectedTag === tag ? 'bg-blue-600' : 'bg-blue-100'
-                        }`}
-                    >
-                        <Text
-                            className={`text-xs font-medium ${
-                                selectedTag === tag ? 'text-white' : 'text-blue-600'
-                            }`}
-                        >
-                            {tag}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
+                    {/* Tag Filters */}
+                    <View className="flex-row flex-wrap gap-2 mb-6">
+                        {["Lehengas", "Blouses", "Sarees", "Kurtis", "Bridal"].map((tag) => (
+                            <TouchableOpacity
+                                key={tag}
+                                onPress={() => setSelectedTag(tag === selectedTag ? '' : tag)}
+                                className={`px-3 py-1 rounded-full ${
+                                    selectedTag === tag ? 'bg-blue-600' : 'bg-blue-100'
+                                }`}
+                            >
+                                <Text
+                                    className={`text-xs font-medium ${
+                                        selectedTag === tag ? 'text-white' : 'text-blue-600'
+                                    }`}
+                                >
+                                    {tag}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
 
-            {/* Search Results */}
-            {filteredResults.length > 0 ? (
-                <View className="gap-4 mb-10">
-                    {filteredResults.map((boutique) => (
-                        <BoutiqueCard key={boutique.id} {...boutique} />
-                    ))}
-                </View>
-            ) : (
-                <Text className="text-center text-gray-500 mt-20">No boutiques found.</Text>
-            )}
-        </ScrollView>
+                    {/* Search Results */}
+                    {filteredResults.length > 0 ? (
+                        <View className="gap-4 mb-10">
+                            {filteredResults.map((boutique) => (
+                                <BoutiqueCard key={boutique.id} {...boutique} />
+                            ))}
+                        </View>
+                    ) : (
+                        <Text className="text-center text-gray-500 mt-20">No boutiques found.</Text>
+                    )}
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 }

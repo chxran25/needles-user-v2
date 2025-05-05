@@ -7,16 +7,16 @@ type Props = {
     tags: string[];
     location: string;
     image: string;
+    rating: number;
 };
 
-export default function BoutiqueCard({ id, name, tags, location, image }: Props) {
+export default function BoutiqueCard({ id, name, tags, location, image, rating }: Props) {
     return (
         <Link href={{ pathname: "/boutique/[id]", params: { id } }} asChild>
             <TouchableOpacity className="bg-white rounded-2xl px-5 py-4 shadow-md space-y-3">
-
-                {/* Static Image */}
+                {/* Static Banner */}
                 <Image
-                    source={require('../../assets/images/gallery-banner.jpg')}
+                    source={require('@/assets/images/gallery-banner.jpg')}
                     style={{ width: '100%', height: 80, borderRadius: 12 }}
                     className="mb-2"
                     resizeMode="cover"
@@ -31,6 +31,13 @@ export default function BoutiqueCard({ id, name, tags, location, image }: Props)
 
                 {/* Name */}
                 <Text className="text-lg font-bold text-gray-900">{name}</Text>
+
+                {/* ⭐ Rating */}
+                <View className="flex-row">
+                    {Array.from({ length: rating }).map((_, i) => (
+                        <Text key={i}>⭐</Text>
+                    ))}
+                </View>
 
                 {/* Tags */}
                 <View className="space-y-1">
