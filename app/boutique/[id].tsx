@@ -1,3 +1,5 @@
+// app/boutique/[id].tsx
+
 import {
     View,
     Text,
@@ -7,7 +9,6 @@ import {
     ImageBackground,
     Animated,
     Dimensions,
-    TextInput,
     KeyboardAvoidingView,
     Platform,
 } from "react-native";
@@ -17,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import ImageViewing from "react-native-image-viewing";
 import { boutiqueData } from "@/lib/boutiqueData";
 import CategoryTags from "@/components/boutique/CategoryTags";
+import OrderForm from "@/app/boutique/order-form";
 
 const placeholderImage = require("@/assets/images/gallery-banner.jpg");
 const SCREEN_HEIGHT = Dimensions.get("window").height;
@@ -27,7 +29,6 @@ export default function BoutiqueDetails() {
     const [visible, setVisible] = useState(false);
     const [currentIndex, setCurrentIndex] = useState(0);
 
-    // Animation related states and refs
     const slideAnim = useRef(new Animated.Value(0)).current;
     const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
 
@@ -35,15 +36,9 @@ export default function BoutiqueDetails() {
     const galleryImages =
         boutique.gallery?.length > 0
             ? boutique.gallery.map((uri) => ({ uri }))
-            : [
-                { uri: Image.resolveAssetSource(placeholderImage).uri },
-                { uri: Image.resolveAssetSource(placeholderImage).uri },
-                { uri: Image.resolveAssetSource(placeholderImage).uri },
-            ];
+            : Array(3).fill({ uri: Image.resolveAssetSource(placeholderImage).uri });
 
-    // Function to toggle the order form
     const toggleOrderForm = () => {
-        // If closed, open it
         if (!isOrderFormOpen) {
             setIsOrderFormOpen(true);
             Animated.timing(slideAnim, {
@@ -51,9 +46,7 @@ export default function BoutiqueDetails() {
                 duration: 300,
                 useNativeDriver: true,
             }).start();
-        }
-        // If open, close it
-        else {
+        } else {
             Animated.timing(slideAnim, {
                 toValue: 0,
                 duration: 300,
@@ -64,7 +57,6 @@ export default function BoutiqueDetails() {
         }
     };
 
-    // Calculate the translateY value based on the animation
     const translateY = slideAnim.interpolate({
         inputRange: [0, 1],
         outputRange: [SCREEN_HEIGHT, 0],
@@ -102,7 +94,7 @@ export default function BoutiqueDetails() {
                         </TouchableOpacity>
                     </View>
 
-                    {/* Details */}
+                    {/* Boutique Info */}
                     <View className="px-4 pt-6 pb-32">
                         <View className="flex-row justify-between items-center mb-4">
                             <Text className="text-2xl font-bold text-gray-900">{boutique.name}</Text>
@@ -116,15 +108,11 @@ export default function BoutiqueDetails() {
                             </View>
                         </View>
 
-                        {/* Description */}
                         <Text className="text-sm font-semibold text-gray-700 mb-1">— Description</Text>
                         <View className="bg-green-100 px-4 py-3 rounded-2xl mb-4">
-                            <Text className="italic text-gray-800 text-center text-sm">
-                                {boutique.description}
-                            </Text>
+                            <Text className="italic text-gray-800 text-center text-sm">{boutique.description}</Text>
                         </View>
 
-                        {/* Tags */}
                         <CategoryTags categories={boutique.tags} />
 
                         {/* Gallery */}
@@ -146,7 +134,7 @@ export default function BoutiqueDetails() {
                     </View>
                 </ScrollView>
 
-                {/* Fixed Bottom CTA Button */}
+                {/* Place Your Order Button */}
                 <TouchableOpacity
                     className={`absolute bottom-6 left-4 right-4 bg-black py-4 rounded-2xl shadow-xl z-10 ${isOrderFormOpen ? "opacity-0" : ""}`}
                     onPress={toggleOrderForm}
@@ -161,75 +149,13 @@ export default function BoutiqueDetails() {
                 {/* Animated Order Form */}
                 {isOrderFormOpen && (
                     <Animated.View
-                        className="absolute left-0 right-0 bg-white z-20 rounded-t-3xl shadow-xl"
-                        style={{
-                            transform: [{ translateY }],
-                            height: SCREEN_HEIGHT,
-                        }}
+                        className="absolute left-0 right-0 bg-white z-20 rounded-t-3xl shadow-xl overflow-hidden"
+                        style={{ transform: [{ translateY }], height: SCREEN_HEIGHT }}
                     >
-                        <View className="flex-1 p-6">
-                            {/* Handle for pulling down */}
-                            <View className="items-center mb-4">
-                                <TouchableOpacity onPress={toggleOrderForm} className="w-full items-center">
-                                    <View className="w-16 h-1 bg-gray-300 rounded-full mb-2" />
-                                    <Text className="text-gray-500 font-medium">Close</Text>
-                                </TouchableOpacity>
-                            </View>
-
-                            {/* Order Form Header */}
-                            <Text className="text-2xl font-bold text-center mb-6">Place Your Order</Text>
-
-                            {/* Order Form */}
-                            <View className="space-y-4">
-                                <View>
-                                    <Text className="text-gray-700 font-medium mb-1">Your Name</Text>
-                                    <TextInput
-                                        className="bg-gray-100 p-3 rounded-xl"
-                                        placeholder="Enter your full name"
-                                    />
-                                </View>
-
-                                <View>
-                                    <Text className="text-gray-700 font-medium mb-1">Phone Number</Text>
-                                    <TextInput
-                                        className="bg-gray-100 p-3 rounded-xl"
-                                        placeholder="Enter your phone number"
-                                        keyboardType="phone-pad"
-                                    />
-                                </View>
-
-                                <View>
-                                    <Text className="text-gray-700 font-medium mb-1">Service Type</Text>
-                                    <View className="bg-gray-100 p-3 rounded-xl">
-                                        <Text className="text-gray-500">{boutique.name} Service</Text>
-                                    </View>
-                                </View>
-
-                                <View>
-                                    <Text className="text-gray-700 font-medium mb-1">Appointment Date</Text>
-                                    <TextInput
-                                        className="bg-gray-100 p-3 rounded-xl"
-                                        placeholder="Select date"
-                                    />
-                                </View>
-
-                                <View>
-                                    <Text className="text-gray-700 font-medium mb-1">Special Requests</Text>
-                                    <TextInput
-                                        className="bg-gray-100 p-3 rounded-xl"
-                                        placeholder="Any special requests or notes"
-                                        multiline
-                                        numberOfLines={4}
-                                        textAlignVertical="top"
-                                    />
-                                </View>
-
-                                {/* Submit Button */}
-                                <TouchableOpacity className="bg-black py-4 rounded-xl mt-6">
-                                    <Text className="text-white font-semibold text-center text-base">Submit Order</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
+                        <OrderForm
+                            categories={boutique.tags}
+                            onClose={toggleOrderForm}
+                        />
                     </Animated.View>
                 )}
             </View>
