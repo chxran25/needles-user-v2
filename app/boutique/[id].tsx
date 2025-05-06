@@ -1,42 +1,80 @@
-    import {
-        View,
-        Text,
-        Image,
-        ScrollView,
-        TouchableOpacity,
-        ImageBackground,
-        TextInput,
-    } from 'react-native';
-    import { useLocalSearchParams, useRouter } from 'expo-router';
-    import { useState, useRef, useMemo, useCallback } from 'react';
-    import { Ionicons } from '@expo/vector-icons';
-    import ImageViewing from 'react-native-image-viewing';
-    import { BottomSheetModal } from '@gorhom/bottom-sheet';
-    import { boutiqueData } from '@/lib/boutiqueData';
+import {
+    View,
+    Text,
+    Image,
+    ScrollView,
+    TouchableOpacity,
+    ImageBackground,
+    Animated,
+    Dimensions,
+    TextInput,
+    KeyboardAvoidingView,
+    Platform,
+} from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useState, useRef } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import ImageViewing from "react-native-image-viewing";
+import { boutiqueData } from "@/lib/boutiqueData";
+import CategoryTags from "@/components/boutique/CategoryTags";
 
-    const placeholderImage = require('@/assets/images/gallery-banner.jpg');
+const placeholderImage = require("@/assets/images/gallery-banner.jpg");
+const SCREEN_HEIGHT = Dimensions.get("window").height;
 
-    export default function BoutiqueDetails() {
-        const { id } = useLocalSearchParams();
-        const router = useRouter();
-        const [visible, setVisible] = useState(false);
-        const [currentIndex, setCurrentIndex] = useState(0);
+export default function BoutiqueDetails() {
+    const { id } = useLocalSearchParams();
+    const router = useRouter();
+    const [visible, setVisible] = useState(false);
+    const [currentIndex, setCurrentIndex] = useState(0);
 
-        const boutique = boutiqueData.find((b) => b.id === id) || boutiqueData[0];
-        const galleryImages =
-            boutique.gallery?.length > 0
-                ? boutique.gallery.map((uri) => ({ uri }))
-                : [
-                    { uri: Image.resolveAssetSource(placeholderImage).uri },
-                    { uri: Image.resolveAssetSource(placeholderImage).uri },
-                    { uri: Image.resolveAssetSource(placeholderImage).uri },
-                ];
+    // Animation related states and refs
+    const slideAnim = useRef(new Animated.Value(0)).current;
+    const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
 
-        const bottomSheetRef = useRef<BottomSheetModal>(null);
-        const snapPoints = useMemo(() => ['65%'], []);
-        const openSheet = useCallback(() => bottomSheetRef.current?.present(), []);
+    const boutique = boutiqueData.find((b) => b.id === id) || boutiqueData[0];
+    const galleryImages =
+        boutique.gallery?.length > 0
+            ? boutique.gallery.map((uri) => ({ uri }))
+            : [
+                { uri: Image.resolveAssetSource(placeholderImage).uri },
+                { uri: Image.resolveAssetSource(placeholderImage).uri },
+                { uri: Image.resolveAssetSource(placeholderImage).uri },
+            ];
 
-        return (
+    // Function to toggle the order form
+    const toggleOrderForm = () => {
+        // If closed, open it
+        if (!isOrderFormOpen) {
+            setIsOrderFormOpen(true);
+            Animated.timing(slideAnim, {
+                toValue: 1,
+                duration: 300,
+                useNativeDriver: true,
+            }).start();
+        }
+        // If open, close it
+        else {
+            Animated.timing(slideAnim, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+            }).start(() => {
+                setIsOrderFormOpen(false);
+            });
+        }
+    };
+
+    // Calculate the translateY value based on the animation
+    const translateY = slideAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [SCREEN_HEIGHT, 0],
+    });
+
+    return (
+        <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            className="flex-1"
+        >
             <View className="flex-1 bg-[#FFF2D7]">
                 <ImageViewing
                     images={galleryImages}
@@ -65,7 +103,7 @@
                     </View>
 
                     {/* Details */}
-                    <View className="px-4 pt-6 pb-28">
+                    <View className="px-4 pt-6 pb-32">
                         <View className="flex-row justify-between items-center mb-4">
                             <Text className="text-2xl font-bold text-gray-900">{boutique.name}</Text>
                             <View className="flex-row">
@@ -87,19 +125,10 @@
                         </View>
 
                         {/* Tags */}
-                        <View className="flex-row flex-wrap gap-2 mb-4 justify-center">
-                            {boutique.tags.map((tag, i) => (
-                                <Text
-                                    key={i}
-                                    className="bg-blue-100 text-blue-600 px-3 py-1 text-sm rounded-full font-semibold"
-                                >
-                                    {tag}
-                                </Text>
-                            ))}
-                        </View>
+                        <CategoryTags categories={boutique.tags} />
 
                         {/* Gallery */}
-                        <View className="flex-row items-center mb-3">
+                        <View className="flex-row items-center mt-6 mb-3">
                             <Text className="text-sm font-semibold text-gray-700 mr-2">— Our Work</Text>
                             <View className="flex-1 h-px bg-gray-400" />
                         </View>
@@ -108,8 +137,7 @@
                                 <TouchableOpacity key={index} onPress={() => { setCurrentIndex(index); setVisible(true); }}>
                                     <Image
                                         source={{ uri: img.uri }}
-                                        className="w-32 h-40 mr-4 rounded-3xl"
-                                        style={{ backgroundColor: '#f3f4f6' }}
+                                        className="w-32 h-40 mr-4 rounded-3xl bg-gray-100"
                                         resizeMode="cover"
                                     />
                                 </TouchableOpacity>
@@ -118,10 +146,11 @@
                     </View>
                 </ScrollView>
 
-                {/* Slide Up CTA */}
+                {/* Fixed Bottom CTA Button */}
                 <TouchableOpacity
-                    className="absolute bottom-6 left-4 right-4 bg-black py-4 rounded-2xl shadow-xl"
-                    onPress={openSheet}
+                    className={`absolute bottom-6 left-4 right-4 bg-black py-4 rounded-2xl shadow-xl z-10 ${isOrderFormOpen ? "opacity-0" : ""}`}
+                    onPress={toggleOrderForm}
+                    style={{ opacity: isOrderFormOpen ? 0 : 1 }}
                 >
                     <View className="flex-row justify-center items-center">
                         <Ionicons name="chevron-up" size={20} color="white" />
@@ -129,31 +158,81 @@
                     </View>
                 </TouchableOpacity>
 
-                {/* Bottom Sheet for Order Form */}
-                <BottomSheetModal ref={bottomSheetRef} index={0} snapPoints={snapPoints}>
-                    <View className="px-4 pt-4">
-                        <Text className="text-lg font-bold text-gray-800 mb-3">Place Your Order</Text>
-                        <View className="space-y-4">
-                            <TextInput
-                                placeholder="Your Name"
-                                className="bg-gray-100 px-4 py-3 rounded-xl text-gray-800"
-                            />
-                            <TextInput
-                                placeholder="Phone Number"
-                                keyboardType="phone-pad"
-                                className="bg-gray-100 px-4 py-3 rounded-xl text-gray-800"
-                            />
-                            <TextInput
-                                placeholder="Dress Type or Custom Request"
-                                multiline
-                                className="bg-gray-100 px-4 py-3 rounded-xl text-gray-800 h-24 text-start"
-                            />
-                            <TouchableOpacity className="bg-black py-3 rounded-xl">
-                                <Text className="text-white text-center font-semibold">Submit Order</Text>
-                            </TouchableOpacity>
+                {/* Animated Order Form */}
+                {isOrderFormOpen && (
+                    <Animated.View
+                        className="absolute left-0 right-0 bg-white z-20 rounded-t-3xl shadow-xl"
+                        style={{
+                            transform: [{ translateY }],
+                            height: SCREEN_HEIGHT,
+                        }}
+                    >
+                        <View className="flex-1 p-6">
+                            {/* Handle for pulling down */}
+                            <View className="items-center mb-4">
+                                <TouchableOpacity onPress={toggleOrderForm} className="w-full items-center">
+                                    <View className="w-16 h-1 bg-gray-300 rounded-full mb-2" />
+                                    <Text className="text-gray-500 font-medium">Close</Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            {/* Order Form Header */}
+                            <Text className="text-2xl font-bold text-center mb-6">Place Your Order</Text>
+
+                            {/* Order Form */}
+                            <View className="space-y-4">
+                                <View>
+                                    <Text className="text-gray-700 font-medium mb-1">Your Name</Text>
+                                    <TextInput
+                                        className="bg-gray-100 p-3 rounded-xl"
+                                        placeholder="Enter your full name"
+                                    />
+                                </View>
+
+                                <View>
+                                    <Text className="text-gray-700 font-medium mb-1">Phone Number</Text>
+                                    <TextInput
+                                        className="bg-gray-100 p-3 rounded-xl"
+                                        placeholder="Enter your phone number"
+                                        keyboardType="phone-pad"
+                                    />
+                                </View>
+
+                                <View>
+                                    <Text className="text-gray-700 font-medium mb-1">Service Type</Text>
+                                    <View className="bg-gray-100 p-3 rounded-xl">
+                                        <Text className="text-gray-500">{boutique.name} Service</Text>
+                                    </View>
+                                </View>
+
+                                <View>
+                                    <Text className="text-gray-700 font-medium mb-1">Appointment Date</Text>
+                                    <TextInput
+                                        className="bg-gray-100 p-3 rounded-xl"
+                                        placeholder="Select date"
+                                    />
+                                </View>
+
+                                <View>
+                                    <Text className="text-gray-700 font-medium mb-1">Special Requests</Text>
+                                    <TextInput
+                                        className="bg-gray-100 p-3 rounded-xl"
+                                        placeholder="Any special requests or notes"
+                                        multiline
+                                        numberOfLines={4}
+                                        textAlignVertical="top"
+                                    />
+                                </View>
+
+                                {/* Submit Button */}
+                                <TouchableOpacity className="bg-black py-4 rounded-xl mt-6">
+                                    <Text className="text-white font-semibold text-center text-base">Submit Order</Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
-                    </View>
-                </BottomSheetModal>
+                    </Animated.View>
+                )}
             </View>
-        );
-    }
+        </KeyboardAvoidingView>
+    );
+}

@@ -9,12 +9,13 @@ import {
     TouchableOpacity,
     KeyboardAvoidingView,
     Platform,
-    Keyboard
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import BoutiqueCard from '@/components/boutique/BoutiqueCard';
+import CategoryTags from '@/components/boutique/CategoryTags';
+
 
 const sampleResults = [
     {
@@ -23,6 +24,7 @@ const sampleResults = [
         tags: ['Blouses', 'Custom Fit'],
         location: 'Kukatpally, Hyderabad',
         image: 'https://via.placeholder.com/300x160?text=Blouse+Haven',
+        rating: 4,
     },
     {
         id: 'lehenga-leaf',
@@ -30,6 +32,7 @@ const sampleResults = [
         tags: ['Lehengas', 'Bridal'],
         location: 'Ameerpet, Hyderabad',
         image: 'https://via.placeholder.com/300x160?text=Lehenga+Leaf',
+        rating: 5,
     },
     {
         id: 'saree-studio',
@@ -37,6 +40,7 @@ const sampleResults = [
         tags: ['Sarees', 'Traditional'],
         location: 'Banjara Hills, Hyderabad',
         image: 'https://via.placeholder.com/300x160?text=Saree+Studio',
+        rating: 3,
     },
     {
         id: 'kurti-couture',
@@ -44,6 +48,7 @@ const sampleResults = [
         tags: ['Kurtis', 'Casual'],
         location: 'Dilsukhnagar, Hyderabad',
         image: 'https://via.placeholder.com/300x160?text=Kurti+Couture',
+        rating: 4,
     },
     {
         id: 'ethnic-threads',
@@ -51,6 +56,7 @@ const sampleResults = [
         tags: ['Sarees', 'Blouses', 'Lehengas'],
         location: 'Madhapur, Hyderabad',
         image: 'https://via.placeholder.com/300x160?text=Ethnic+Threads',
+        rating: 5,
     },
 ];
 
