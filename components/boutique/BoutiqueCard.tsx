@@ -2,7 +2,6 @@ import { View, Text, Image, TouchableOpacity } from 'react-native';
 import { Link } from 'expo-router';
 import CategoryTags from './CategoryTags';
 
-
 type Props = {
     id: string;
     name: string;
@@ -37,7 +36,7 @@ export default function BoutiqueCard({ id, name, tags, location, image, rating }
                 {/* ⭐ Rating */}
                 <View className="flex-row">
                     {Array.from({ length: rating }).map((_, i) => (
-                        <Text key={i}>⭐</Text>
+                        <Text key={i}>{'⭐'}</Text>
                     ))}
                 </View>
 
@@ -47,10 +46,9 @@ export default function BoutiqueCard({ id, name, tags, location, image, rating }
                     <CategoryTags categories={tags} />
                 </View>
 
-
                 {/* Location */}
                 <View className="pt-2">
-                    <Text className="text-sm text-gray-500">📍 {location}</Text>
+                    <Text className="text-sm text-gray-500">{'📍'} {location}</Text>
                 </View>
             </TouchableOpacity>
         </Link>

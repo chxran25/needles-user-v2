@@ -1,12 +1,25 @@
 // File: app/(tabs)/index.tsx
 
-import { ScrollView, View, Text, TextInput, Image, TouchableOpacity, Pressable, Dimensions, Animated } from 'react-native';
+import {
+    ScrollView,
+    View,
+    Text,
+    TextInput,
+    Image,
+    TouchableOpacity,
+    Pressable,
+    Dimensions,
+    Animated,
+    NativeSyntheticEvent,
+    NativeScrollEvent,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { boutiqueData } from '@/lib/boutiqueData';
 import BoutiqueCard from '@/components/boutique/BoutiqueCard';
+import { useScrollContext } from '@/context/ScrollContext'; // ✅ Add this line
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -15,6 +28,8 @@ export default function HomeScreen() {
     const [sidebarVisible, setSidebarVisible] = useState(false);
     const sidebarAnim = useRef(new Animated.Value(-SCREEN_WIDTH * 0.75)).current;
     const router = useRouter();
+
+    const { setScrollY } = useScrollContext(); // ✅ Get the scroll setter from context
 
     const toggleSidebar = (show: boolean) => {
         Animated.timing(sidebarAnim, {
@@ -29,6 +44,12 @@ export default function HomeScreen() {
             sidebarAnim.setValue(-SCREEN_WIDTH * 0.75);
         }
     }, [sidebarVisible]);
+
+    // ✅ Scroll event handler to update context
+    const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+        const currentOffset = event.nativeEvent.contentOffset.y;
+        setScrollY(currentOffset);
+    };
 
     return (
         <SafeAreaView className="flex-1 bg-[#FFF2D7]">
@@ -91,8 +112,12 @@ export default function HomeScreen() {
                 </View>
             </View>
 
-            {/* Boutique List */}
-            <ScrollView className="px-4 pt-6">
+            {/* Boutique List with scroll handler */}
+            <ScrollView
+                onScroll={handleScroll}
+                scrollEventThrottle={16}
+                className="px-4 pt-6"
+            >
                 <Text className="text-lg font-semibold mb-3">Recommended</Text>
                 <View className="gap-6 pb-10">
                     {boutiqueData.map((boutique) => (

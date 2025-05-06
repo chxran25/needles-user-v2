@@ -1,13 +1,14 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import {
-    View,
-    Text,
-    TouchableWithoutFeedback,
     Animated,
+    TouchableOpacity,
+    View,
+    Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import React, { useRef } from "react";
+import { useNavBarAutoHide } from "@/hooks/useNavBarAutoHide";
+import { useEffect, useRef } from "react";
 
 export default function TabLayout() {
     return (
@@ -27,87 +28,112 @@ export default function TabLayout() {
 
 function CustomTabBar({ state, descriptors, navigation }: any) {
     const insets = useSafeAreaInsets();
-
-    const iconNameMap: Record<string, keyof typeof Ionicons.glyphMap> = {
-        index: "home-outline",
-        search: "search-outline",
-        orders: "receipt-outline",
-        profile: "person-outline",
-    };
+    const translateY = useNavBarAutoHide(); // Custom scroll hook
 
     return (
-        <View
+        <Animated.View
             style={{
                 flexDirection: "row",
                 justifyContent: "space-around",
                 alignItems: "center",
-                backgroundColor: "#E1CBAE",
-                borderTopLeftRadius: 20,
-                borderTopRightRadius: 20,
-                marginHorizontal: 12,
-                marginBottom: insets.bottom > 0 ? insets.bottom : 6,
-                paddingTop: 10,
-                paddingBottom: 12,
-                elevation: 12,
+                backgroundColor: "rgba(225, 203, 174, 0.95)",
+                position: "absolute",
+                bottom: insets.bottom ? insets.bottom : 12,
+                left: 12,
+                right: 12,
+                height: 60,
+                borderRadius: 30,
+                paddingHorizontal: 12,
                 shadowColor: "#000",
-                shadowOffset: { width: 0, height: -3 },
-                shadowOpacity: 0.1,
-                shadowRadius: 6,
+                shadowOffset: { width: 0, height: -2 },
+                shadowOpacity: 0.15,
+                shadowRadius: 5,
+                elevation: 5,
+                transform: [{ translateY }],
+                zIndex: 999,
+                backdropFilter: Platform.OS === "web" ? "blur(10px)" : undefined,
             }}
         >
             {state.routes.map((route: any, index: number) => {
                 const { options } = descriptors[route.key];
-                const label = options.tabBarLabel ?? options.title ?? route.name;
                 const isFocused = state.index === index;
 
+                const onPress = () => {
+                    const event = navigation.emit({
+                        type: "tabPress",
+                        target: route.key,
+                        canPreventDefault: true,
+                    });
+
+                    if (!isFocused && !event.defaultPrevented) {
+                        navigation.navigate(route.name);
+                    }
+                };
+
+                const iconMap: Record<string, keyof typeof Ionicons.glyphMap> = {
+                    index: "home-outline",
+                    search: "search-outline",
+                    orders: "receipt-outline",
+                    profile: "person-outline",
+                };
+
                 return (
-                    <TouchableWithoutFeedback
+                    <TouchableOpacity
                         key={route.key}
-                        onPress={() => {
-                            const event = navigation.emit({
-                                type: "tabPress",
-                                target: route.key,
-                                canPreventDefault: true,
-                            });
-                            if (!isFocused && !event.defaultPrevented) {
-                                navigation.navigate(route.name);
-                            }
+                        onPress={onPress}
+                        style={{
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flex: 1,
+                            height: "100%",
                         }}
                     >
-                        <View style={{ flex: 1, alignItems: "center" }}>
-                            <Ionicons
-                                name={iconNameMap[route.name]}
-                                size={22}
-                                color={isFocused ? "#000" : "#444"}
-                            />
-                            <Text
+                        {isFocused && (
+                            <Animated.View
                                 style={{
-                                    fontSize: 12,
-                                    marginTop: 2,
-                                    color: isFocused ? "#000" : "#444",
-                                    fontWeight: isFocused ? "600" : "400",
+                                    position: "absolute",
+                                    top: 12,
+                                    width: 48,
+                                    height: 39,
+                                    borderRadius: 18,
+                                    backgroundColor: "#1959AD66",
+                                    transform: [{ scale: 1.1 }], // optional scale on highlight
                                 }}
-                            >
-                                {label}
-                            </Text>
+                            />
+                        )}
 
-                            {/* Highlight Dot */}
-                            {isFocused && (
-                                <View
-                                    style={{
-                                        marginTop: 4,
-                                        width: 6,
-                                        height: 6,
-                                        borderRadius: 3,
-                                        backgroundColor: "#000", // dot color
-                                    }}
-                                />
-                            )}
-                        </View>
-                    </TouchableWithoutFeedback>
+                        <AnimatedIcon
+                            name={iconMap[route.name]}
+                            isFocused={isFocused}
+                        />
+                    </TouchableOpacity>
                 );
             })}
-        </View>
+        </Animated.View>
     );
 }
 
+// ✅ AnimatedIcon Component
+const AnimatedIcon = ({
+                          name,
+                          isFocused,
+                      }: {
+    name: keyof typeof Ionicons.glyphMap;
+    isFocused: boolean;
+}) => {
+    const scale = useRef(new Animated.Value(1)).current;
+
+    useEffect(() => {
+        Animated.spring(scale, {
+            toValue: isFocused ? 1.2 : 1,
+            useNativeDriver: true,
+            friction: 4,
+        }).start();
+    }, [isFocused]);
+
+    return (
+        <Animated.View style={{ transform: [{ scale }] }}>
+            <Ionicons name={name} size={22} color={isFocused ? "#000" : "#333"} />
+        </Animated.View>
+    );
+};
