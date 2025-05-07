@@ -19,7 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { boutiqueData } from '@/lib/boutiqueData';
 import BoutiqueCard from '@/components/boutique/BoutiqueCard';
-import { useScrollContext } from '@/context/ScrollContext'; // ✅ Add this line
+import { useScrollContext } from '@/context/ScrollContext';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -29,7 +29,7 @@ export default function HomeScreen() {
     const sidebarAnim = useRef(new Animated.Value(-SCREEN_WIDTH * 0.75)).current;
     const router = useRouter();
 
-    const { setScrollY } = useScrollContext(); // ✅ Get the scroll setter from context
+    const { setScrollY } = useScrollContext();
 
     const toggleSidebar = (show: boolean) => {
         Animated.timing(sidebarAnim, {
@@ -45,14 +45,13 @@ export default function HomeScreen() {
         }
     }, [sidebarVisible]);
 
-    // ✅ Scroll event handler to update context
     const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
         const currentOffset = event.nativeEvent.contentOffset.y;
         setScrollY(currentOffset);
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-[#FFF2D7]">
+        <SafeAreaView className="flex-1 bg-light-100">
             {/* Sidebar Overlay */}
             {sidebarVisible && (
                 <Pressable
@@ -61,7 +60,7 @@ export default function HomeScreen() {
                 />
             )}
 
-            {/* Sidebar Slide-In */}
+            {/* Sidebar */}
             <Animated.View
                 style={{
                     position: 'absolute',
@@ -83,7 +82,7 @@ export default function HomeScreen() {
                 <Text className="text-base mb-4">Logout</Text>
             </Animated.View>
 
-            {/* Header Area */}
+            {/* Header */}
             <View className="px-4 pt-4">
                 <View className="bg-[#FFE082] rounded-3xl px-4 pb-4 pt-4">
                     <View className="flex-row items-center">
@@ -112,13 +111,27 @@ export default function HomeScreen() {
                 </View>
             </View>
 
-            {/* Boutique List with scroll handler */}
+            {/* Content */}
             <ScrollView
                 onScroll={handleScroll}
                 scrollEventThrottle={16}
                 className="px-4 pt-6"
             >
-                <Text className="text-lg font-semibold mb-3">Recommended</Text>
+                {/* One Day Delivery Section */}
+                <Text className="text-2xl font-semibold mb-2">One Day Delivery</Text>
+                <TouchableOpacity
+                    className="mb-6 rounded-2xl overflow-hidden shadow-lg"
+                    onPress={() => router.push('./one-day-delivery')}
+                >
+                    <Image
+                        source={require('@/assets/images/one-day-delivery.png')}
+                        className="w-full h-55"
+                        resizeMode="cover"
+                    />
+                </TouchableOpacity>
+
+                {/* Recommended */}
+                <Text className="text-2xl font-semibold mb-3">Recommended</Text>
                 <View className="gap-6 pb-10">
                     {boutiqueData.map((boutique) => (
                         <BoutiqueCard key={boutique.id} {...boutique} />

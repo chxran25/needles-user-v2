@@ -1,6 +1,7 @@
 import { View, Text, Image, TouchableOpacity } from 'react-native';
 import { Link } from 'expo-router';
 import CategoryTags from './CategoryTags';
+import { Ionicons } from '@expo/vector-icons';
 
 type Props = {
     id: string;
@@ -11,14 +12,24 @@ type Props = {
     rating: number;
 };
 
-export default function BoutiqueCard({ id, name, tags, location, image, rating }: Props) {
+export default function BoutiqueCard({
+                                         id,
+                                         name,
+                                         tags,
+                                         location,
+                                         image,
+                                         rating,
+                                     }: Props) {
     return (
         <Link href={{ pathname: "/boutique/[id]", params: { id } }} asChild>
-            <TouchableOpacity className="bg-white rounded-2xl px-5 py-4 shadow-md space-y-3">
+            <TouchableOpacity
+                className="bg-white rounded-xl px-4 py-1 shadow-md border border-gray-100"
+                activeOpacity={0.9}
+            >
                 {/* Static Banner */}
                 <Image
                     source={require('@/assets/images/gallery-banner.jpg')}
-                    style={{ width: '100%', height: 80, borderRadius: 12 }}
+                    style={{ width: '100%', height: 80, borderRadius: 10 }}
                     className="mb-2"
                     resizeMode="cover"
                 />
@@ -26,29 +37,43 @@ export default function BoutiqueCard({ id, name, tags, location, image, rating }
                 {/* Boutique Image */}
                 <Image
                     source={{ uri: image }}
-                    className="w-full h-40 rounded-xl"
+                    className="w-full h-40 rounded-lg"
                     resizeMode="cover"
                 />
 
-                {/* Name */}
-                <Text className="text-lg font-bold text-gray-900">{name}</Text>
-
-                {/* ⭐ Rating */}
-                <View className="flex-row">
-                    {Array.from({ length: rating }).map((_, i) => (
-                        <Text key={i}>{'⭐'}</Text>
-                    ))}
+                {/* Name & Rating */}
+                <View className="flex-row justify-between items-center mt-3">
+                    <Text
+                        className="text-[22px] font-bold text-gray-900 flex-1"
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                    >
+                        {name}
+                    </Text>
+                    <View className="flex-row ml-2">
+                        {Array.from({ length: rating }).map((_, i) => (
+                            <Ionicons
+                                key={i}
+                                name="star"
+                                size={16}
+                                color="#FFD700"
+                                style={{ marginRight: 2 }}
+                            />
+                        ))}
+                    </View>
                 </View>
 
                 {/* Tags */}
-                <View className="space-y-1">
-                    <Text className="text-sm text-gray-600 font-medium">Known for:</Text>
+                <View className="mt-5">
+                    <Text className="text-l text-gray-600 font-medium mb-1">
+                        Known for:
+                    </Text>
                     <CategoryTags categories={tags} />
                 </View>
 
                 {/* Location */}
-                <View className="pt-2">
-                    <Text className="text-sm text-gray-500">{'📍'} {location}</Text>
+                <View className="pt-3">
+                    <Text className="text-m text-gray-500">{'📍'} {location}</Text>
                 </View>
             </TouchableOpacity>
         </Link>
