@@ -116,6 +116,7 @@ export default function HomeScreen() {
                 onScroll={handleScroll}
                 scrollEventThrottle={16}
                 className="px-4 pt-6"
+                contentContainerStyle={{ paddingBottom: 80, flexGrow: 1 }} // ✅ Added
             >
                 {/* One Day Delivery Section */}
                 <Text className="text-2xl font-semibold mb-2">One Day Delivery</Text>

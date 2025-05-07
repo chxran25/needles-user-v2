@@ -135,8 +135,10 @@ export default function OrderForm({ categories, onClose }: Props) {
                                 placeholder={key.charAt(0).toUpperCase() + key.slice(1)}
                                 value={measurements[key as keyof typeof measurements]}
                                 onChangeText={(text) =>
-                                    setMeasurements((prev) => ({ ...prev, [key]: text }))
+                                    setMeasurements((prev) => ({ ...prev, [key]: text.replace(/[^0-9.]/g, '') }))
                                 }
+                                keyboardType="numeric"
+                                inputMode="numeric"
                                 className="bg-white p-3 rounded-xl w-[48%] mb-3"
                             />
                         ))}
