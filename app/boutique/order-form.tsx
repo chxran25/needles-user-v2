@@ -33,9 +33,12 @@ export default function OrderForm({ categories, onClose }: Props) {
 
     const handleChooseImage = async () => {
         try {
-            const ImagePicker = await import("expo-image-picker");
+            const {
+                launchImageLibraryAsync,
+                requestMediaLibraryPermissionsAsync,
+            } = await import("expo-image-picker");
 
-            const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            const permissionResult = await requestMediaLibraryPermissionsAsync();
             if (!permissionResult.granted) {
                 Alert.alert(
                     "Permission required",
@@ -44,8 +47,8 @@ export default function OrderForm({ categories, onClose }: Props) {
                 return;
             }
 
-            const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            const result = await launchImageLibraryAsync({
+                mediaTypes: ["images"], // ✅ Use string directly
                 quality: 1,
             });
 
@@ -57,6 +60,7 @@ export default function OrderForm({ categories, onClose }: Props) {
             Alert.alert("Error", "Failed to open gallery. Please try again.");
         }
     };
+
 
 
     const handlePickupRequest = () => {
