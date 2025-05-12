@@ -1,4 +1,4 @@
-// Updated index.tsx for a cleaner, minimal home screen
+// Cleaned and fixed index.tsx with working animations and removed unused code
 
 import {
     ScrollView,
@@ -7,25 +7,24 @@ import {
     TextInput,
     Image,
     TouchableOpacity,
-    Pressable,
     Dimensions,
-    Animated,
+    Animated as RNAnimated,
     NativeSyntheticEvent,
     NativeScrollEvent,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { boutiqueData, popularDressTypes } from '@/lib/boutiqueData';
 import BoutiqueCard from '@/components/boutique/BoutiqueCard';
 import { useScrollContext } from '@/context/ScrollContext';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 export default function HomeScreen() {
     const [search, setSearch] = useState('');
-    const sidebarAnim = useRef(new Animated.Value(-SCREEN_WIDTH * 0.75)).current;
     const router = useRouter();
     const { setScrollY } = useScrollContext();
 
@@ -34,13 +33,23 @@ export default function HomeScreen() {
         setScrollY(currentOffset);
     };
 
+    const renderSectionHeader = (title: string) => (
+        <Animated.View
+            entering={FadeInDown.duration(500)}
+            className="flex-row items-center mb-4 mt-6"
+        >
+            <Text className="text-2xl font-bold text-textDark mr-2">{title}</Text>
+            <View className="flex-1 h-px bg-gray-300" />
+        </Animated.View>
+    );
+
     return (
         <SafeAreaView className="flex-1 bg-light-100">
             <ScrollView
                 onScroll={handleScroll}
                 scrollEventThrottle={16}
                 className="px-4 pt-4"
-                contentContainerStyle={{ paddingBottom: 80, flexGrow: 1 }}
+                contentContainerStyle={{ paddingBottom: 100, flexGrow: 1 }}
             >
                 {/* Header */}
                 <View className="flex-row items-center justify-between mb-4 px-1">
@@ -74,21 +83,22 @@ export default function HomeScreen() {
                     </TouchableOpacity>
                 </View>
 
-                {/* Hero Banner */}
+                {/* One Day Delivery */}
+                {renderSectionHeader("One Day Delivery")}
                 <TouchableOpacity
-                    className="mb-6 rounded-2xl overflow-hidden shadow-lg"
+                    className="rounded-2xl overflow-hidden shadow-lg"
                     onPress={() => router.push('./one-day-delivery')}
                 >
                     <Image
                         source={require('@/assets/images/one-day-delivery.png')}
-                        className="w-full h-48"
+                        className="w-full h-56"
                         resizeMode="cover"
                     />
                 </TouchableOpacity>
 
                 {/* Popular Dresses Grid */}
-                <Text className="text-xl font-semibold text-textDark mb-3">Popular Categories</Text>
-                <View className="flex-row flex-wrap gap-4 mb-8">
+                {renderSectionHeader("Popular Categories")}
+                <View className="flex-row flex-wrap gap-4">
                     {popularDressTypes.map((item, index) => (
                         <TouchableOpacity
                             key={index}
@@ -97,7 +107,7 @@ export default function HomeScreen() {
                         >
                             <Image
                                 source={item.image}
-                                style={{ width: 72, height: 72, borderRadius: 12 }}
+                                style={{ width: 100, height: 100, borderRadius: 12 }}
                                 resizeMode="cover"
                             />
                             <Text className="mt-2 text-sm text-center text-gray-700">{item.name}</Text>
@@ -106,15 +116,18 @@ export default function HomeScreen() {
                 </View>
 
                 {/* Recommended Boutiques */}
-                <Text className="text-xl font-semibold text-textDark mb-3">Recommended</Text>
+                {renderSectionHeader("Recommended")}
                 <View className="gap-6">
-                    {boutiqueData.slice(0, 3).map((boutique) => (
-                        <BoutiqueCard key={boutique.id} {...boutique} />
+                    {boutiqueData.slice(0, 3).map((boutique, i) => (
+                        <Animated.View key={boutique.id} entering={FadeInUp.delay(i * 100).duration(600)}>
+                            <BoutiqueCard {...boutique} />
+                        </Animated.View>
                     ))}
                 </View>
+
                 <TouchableOpacity
                     onPress={() => router.push('/search')}
-                    className="mt-6 items-center"
+                    className="mt-8 items-center"
                 >
                     <Text className="text-primary font-medium">View More Boutiques →</Text>
                 </TouchableOpacity>

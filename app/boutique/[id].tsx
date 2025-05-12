@@ -21,6 +21,8 @@ import CategoryTags from "@/components/boutique/CategoryTags";
 import OrderForm from "@/app/boutique/order-form";
 
 const placeholderImage = require("@/assets/images/gallery-banner.jpg");
+const work1 = require("@/assets/images/boutique-work-1.jpg");
+const work2 = require("@/assets/images/boutique-work-2.jpg");
 const SCREEN_HEIGHT = Dimensions.get("window").height;
 
 export default function BoutiqueDetails() {
@@ -33,10 +35,24 @@ export default function BoutiqueDetails() {
     const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
 
     const boutique = boutiqueData.find((b) => b.id === id) || boutiqueData[0];
-    const galleryImages =
-        boutique.gallery?.length > 0
-            ? boutique.gallery.map((uri) => ({ uri }))
-            : Array(3).fill({ uri: Image.resolveAssetSource(placeholderImage).uri });
+
+    const isLehengaLeafOrSimilar = ["lehenga-leaf", "kurti-couture", "tattva-fashions"].includes(boutique.id);
+
+    const bannerImageUri = typeof boutique.image === "number"
+        ? Image.resolveAssetSource(boutique.image).uri
+        : boutique.image;
+
+    const galleryImages = [
+        { uri: bannerImageUri },
+        ...(
+            isLehengaLeafOrSimilar
+                ? [
+                    { uri: Image.resolveAssetSource(work1).uri },
+                    { uri: Image.resolveAssetSource(work2).uri }
+                ]
+                : boutique.gallery?.map((uri) => ({ uri })) || []
+        )
+    ];
 
     const toggleOrderForm = () => {
         if (!isOrderFormOpen) {
@@ -80,7 +96,7 @@ export default function BoutiqueDetails() {
                     <View className="relative">
                         <TouchableOpacity onPress={() => { setCurrentIndex(0); setVisible(true); }}>
                             <ImageBackground
-                                source={placeholderImage}
+                                source={typeof boutique.image === "number" ? boutique.image : { uri: boutique.image }}
                                 className="w-full h-72 justify-end pb-6"
                                 imageStyle={{ borderBottomLeftRadius: 30, borderBottomRightRadius: 30 }}
                                 resizeMode="cover"
@@ -121,8 +137,8 @@ export default function BoutiqueDetails() {
                             <View className="flex-1 h-px bg-gray-400" />
                         </View>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6">
-                            {galleryImages.map((img, index) => (
-                                <TouchableOpacity key={index} onPress={() => { setCurrentIndex(index); setVisible(true); }}>
+                            {galleryImages.slice(1).map((img, index) => (
+                                <TouchableOpacity key={index} onPress={() => { setCurrentIndex(index + 1); setVisible(true); }}>
                                     <Image
                                         source={{ uri: img.uri }}
                                         className="w-32 h-40 mr-4 rounded-3xl bg-gray-300"
