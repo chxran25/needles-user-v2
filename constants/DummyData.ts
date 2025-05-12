@@ -2,42 +2,47 @@ export const boutiques = [
     {
         id: "1",
         name: "Tattva Fashions",
-        image: "https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8Mnx8ZmFzaGlvbiUyMHN0b3JlfGVufDB8fDB8fA%3D%3D&auto=format&fit=crop&w=800&q=60",
+        image:
+            "https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=60",
         description: "Welcome to Tattva Fashions, where tradition meets innovation!",
         rating: 5,
         categories: ["Lehengas", "Magenta", "Blouses", "Dresses"],
         portfolio: [
-            "https://images.unsplash.com/photo-1614252369475-531eba835eb1?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8Mnx8aW5kaWFuJTIwZHJlc3N8ZW58MHx8MHx8&auto=format&fit=crop&w=500&q=60",
-            "https://images.unsplash.com/photo-1583391733981-8498c62f141b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8M3x8aW5kaWFuJTIwZHJlc3N8ZW58MHx8MHx8&auto=format&fit=crop&w=500&q=60",
-            "https://images.unsplash.com/photo-1610189276290-90a551271fb6?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8NXx8aW5kaWFuJTIwZHJlc3N8ZW58MHx8MHx8&auto=format&fit=crop&w=500&q=60"
-        ]
+            "https://images.unsplash.com/photo-1614252369475-531eba835eb1?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
+            "https://images.unsplash.com/photo-1583391733981-8498c62f141b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
+            "https://images.unsplash.com/photo-1610189276290-90a551271fb6?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
+        ],
     },
     {
         id: "2",
-        name: "Miyapur store",
-        image: "https://images.unsplash.com/photo-1612423284934-2850a4ea6b0f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8M3x8Ym91dGlxdWV8ZW58MHx8MHx8&auto=format&fit=crop&w=800&q=60",
-        description: "Specialized in traditional and contemporary clothing for all occasions",
-        rating: 4,
-        categories: ["Ethnic", "Bridal"],
+        name: "Kurti Couture",
+        image:
+            "https://images.unsplash.com/photo-1582719478250-04fcbf3ed8b1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=60",
+        description:
+            "Elegant kurtis with a twist of contemporary fusion. Stylish, versatile, and tailor-made.",
+        rating: 4.8,
+        categories: ["Kurtis", "Fusion", "Festive"],
         portfolio: [
-            "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8NHx8aW5kaWFuJTIwZHJlc3N8ZW58MHx8MHx8&auto=format&fit=crop&w=500&q=60",
-            "https://images.unsplash.com/photo-1583243567239-889264a72044?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8OXx8aW5kaWFuJTIwZHJlc3N8ZW58MHx8MHx8&auto=format&fit=crop&w=500&q=60",
-            "https://images.unsplash.com/photo-1583243567510-42cfa8999053?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTJ8fGluZGlhbiUyMGRyZXNzfGVufDB8fDB8fA%3D%3D&auto=format&fit=crop&w=500&q=60"
-        ]
+            "https://images.unsplash.com/photo-1610196031374-cba3d89c5821?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
+            "https://images.unsplash.com/photo-1589987600377-52c9f31fe017?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
+            "https://images.unsplash.com/photo-1572294431520-12158c75030f?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
+        ],
     },
     {
         id: "3",
-        name: "KPHB store",
-        image: "https://images.unsplash.com/photo-1519415510236-718bdfcd89c0?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTF8fGJvdXRpcXVlfGVufDB8fDB8fA%3D%3D&auto=format&fit=crop&w=800&q=60",
-        description: "Your one-stop shop for trendy and fashionable custom clothing",
-        rating: 4.5,
-        categories: ["Western", "Casual"],
+        name: "Lehanga Leaf",
+        image:
+            "https://images.unsplash.com/photo-1544025162-d76694265947?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=60",
+        description:
+            "Royal lehengas curated with intricate handwork and the finest fabrics. Perfect for the modern bride.",
+        rating: 4.9,
+        categories: ["Lehengas", "Bridal", "Luxury"],
         portfolio: [
-            "https://images.unsplash.com/photo-1616832880334-b1004d9808da?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTV8fGluZGlhbiUyMGRyZXNzfGVufDB8fDB8fA%3D%3D&auto=format&fit=crop&w=500&q=60",
-            "https://images.unsplash.com/photo-1603487742131-4160ec999306?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MjB8fGluZGlhbiUyMGRyZXNzfGVufDB8fDB8fA%3D%3D&auto=format&fit=crop&w=500&q=60",
-            "https://images.unsplash.com/photo-1611996575749-79a3a250f948?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MjF8fGluZGlhbiUyMGRyZXNzfGVufDB8fDB8fA%3D%3D&auto=format&fit=crop&w=500&q=60"
-        ]
-    }
+            "https://images.unsplash.com/photo-1612499613995-8794ed2fbfc6?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
+            "https://images.unsplash.com/photo-1622495893590-21a91447ff93?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
+            "https://images.unsplash.com/photo-1611573999130-66b57aebc45d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
+        ],
+    },
 ];
 
 export const categories = [
@@ -48,7 +53,11 @@ export const categories = [
     "Ethnic",
     "Bridal",
     "Western",
-    "Casual"
+    "Casual",
+    "Kurtis",
+    "Fusion",
+    "Luxury",
+    "Festive",
 ];
 
 export type BoutiqueType = {

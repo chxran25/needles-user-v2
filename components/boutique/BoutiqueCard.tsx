@@ -8,7 +8,7 @@ type Props = {
     name: string;
     tags: string[];
     location: string;
-    image: string;
+    image: any; // local require() or remote uri string
     rating: number;
 };
 
@@ -26,17 +26,10 @@ export default function BoutiqueCard({
                 className="bg-white rounded-xl px-4 py-1 shadow-md border border-gray-100"
                 activeOpacity={0.9}
             >
-                {/* Static Banner */}
-                <Image
-                    source={require('@/assets/images/gallery-banner.jpg')}
-                    style={{ width: '100%', height: 80, borderRadius: 10 }}
-                    className="mb-2"
-                    resizeMode="cover"
-                />
 
-                {/* Boutique Image */}
+                {/* Boutique Image (dynamic local or remote) */}
                 <Image
-                    source={{ uri: image }}
+                    source={typeof image === 'string' ? { uri: image } : image}
                     className="w-full h-40 rounded-lg"
                     resizeMode="cover"
                 />
@@ -51,7 +44,7 @@ export default function BoutiqueCard({
                         {name}
                     </Text>
                     <View className="flex-row ml-2">
-                        {Array.from({ length: rating }).map((_, i) => (
+                        {Array.from({ length: Math.floor(rating) }).map((_, i) => (
                             <Ionicons
                                 key={i}
                                 name="star"
@@ -65,9 +58,7 @@ export default function BoutiqueCard({
 
                 {/* Tags */}
                 <View className="mt-5">
-                    <Text className="text-l text-gray-600 font-medium mb-1">
-                        Known for:
-                    </Text>
+                    <Text className="text-l text-gray-600 font-medium mb-1">Known for:</Text>
                     <CategoryTags categories={tags} />
                 </View>
 

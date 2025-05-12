@@ -82,7 +82,7 @@ export default function SearchScreen() {
     );
 
     return (
-        <SafeAreaView className="flex-1 bg-[#FFF2D7]">
+        <SafeAreaView className="flex-1 bg-background">
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 className="flex-1"

@@ -5,6 +5,7 @@ import {
     TouchableOpacity,
     View,
     Platform,
+    StyleSheet,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavBarAutoHide } from "@/hooks/useNavBarAutoHide";
@@ -32,27 +33,13 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 
     return (
         <Animated.View
-            style={{
-                flexDirection: "row",
-                justifyContent: "space-around",
-                alignItems: "center",
-                backgroundColor: "rgba(225, 203, 174, 0.95)",
-                position: "absolute",
-                bottom: insets.bottom ? insets.bottom : 12,
-                left: 12,
-                right: 12,
-                height: 60,
-                borderRadius: 30,
-                paddingHorizontal: 12,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: -2 },
-                shadowOpacity: 0.15,
-                shadowRadius: 5,
-                elevation: 5,
-                transform: [{ translateY }],
-                zIndex: 999,
-                backdropFilter: Platform.OS === "web" ? "blur(10px)" : undefined,
-            }}
+            style={[
+                styles.tabBarContainer,
+                {
+                    paddingBottom: insets.bottom ? insets.bottom : 12,
+                    transform: [{ translateY }],
+                },
+            ]}
         >
             {state.routes.map((route: any, index: number) => {
                 const { options } = descriptors[route.key];
@@ -73,7 +60,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
                 const iconMap: Record<string, keyof typeof Ionicons.glyphMap> = {
                     index: "home-outline",
                     search: "search-outline",
-                    orders: "receipt-outline",
+                    orders: "bag-outline",
                     profile: "person-outline",
                 };
 
@@ -81,31 +68,17 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
                     <TouchableOpacity
                         key={route.key}
                         onPress={onPress}
-                        style={{
-                            alignItems: "center",
-                            justifyContent: "center",
-                            flex: 1,
-                            height: "100%",
-                        }}
+                        style={styles.tabButton}
                     >
-                        {isFocused && (
-                            <Animated.View
-                                style={{
-                                    position: "absolute",
-                                    top: 12,
-                                    width: 48,
-                                    height: 39,
-                                    borderRadius: 18,
-                                    backgroundColor: "#1959AD66",
-                                    transform: [{ scale: 1.1 }], // optional scale on highlight
-                                }}
+                        <View style={styles.iconWrapper}>
+                            <View
+                                style={[
+                                    styles.focusedCircleBase,
+                                    isFocused && styles.focusedCircleActive,
+                                ]}
                             />
-                        )}
-
-                        <AnimatedIcon
-                            name={iconMap[route.name]}
-                            isFocused={isFocused}
-                        />
+                            <AnimatedIcon name={iconMap[route.name]} isFocused={isFocused} />
+                        </View>
                     </TouchableOpacity>
                 );
             })}
@@ -113,7 +86,6 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     );
 }
 
-// ✅ AnimatedIcon Component
 const AnimatedIcon = ({
                           name,
                           isFocused,
@@ -125,15 +97,69 @@ const AnimatedIcon = ({
 
     useEffect(() => {
         Animated.spring(scale, {
-            toValue: isFocused ? 1.2 : 1,
+            toValue: isFocused ? 1.5 : 1,
             useNativeDriver: true,
             friction: 4,
         }).start();
     }, [isFocused]);
 
     return (
-        <Animated.View style={{ transform: [{ scale }] }}>
-            <Ionicons name={name} size={22} color={isFocused ? "#000" : "#333"} />
+        <Animated.View style={{ transform: [{ scale }], zIndex: 2 }}>
+            <Ionicons
+                name={name}
+                size={24}
+                color={isFocused ? "#FFFFFF" : "#777777"}
+            />
         </Animated.View>
     );
 };
+
+const styles = StyleSheet.create({
+    tabBarContainer: {
+        flexDirection: "row",
+        justifyContent: "space-around",
+        alignItems: "center",
+        backgroundColor: "rgba(28, 27, 31, 0.8)", // 85% opacity
+        position: "absolute",
+        bottom: 15,
+        left: 10,
+        right: 10,
+        height: 64,
+        paddingHorizontal: 12,
+        paddingVertical: 9,
+        borderRadius: 40,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 5,
+        elevation: 5,
+        zIndex: 999,
+        overflow: "hidden", // prevents any overflow
+    },
+    tabButton: {
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100%",
+    },
+    iconWrapper: {
+        alignItems: "center",
+        justifyContent: "center",
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        position: "relative",
+        overflow: "hidden",
+    },
+    focusedCircleBase: {
+        position: "absolute",
+        width: 65,
+        height: 55,
+        borderRadius: 50,
+        backgroundColor: "transparent",
+        zIndex: 1,
+    },
+    focusedCircleActive: {
+        backgroundColor: "#FF5A5F",
+    },
+});
