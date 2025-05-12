@@ -67,7 +67,7 @@ export default function BoutiqueDetails() {
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             className="flex-1"
         >
-            <View className="flex-1 bg-[#FFF2D7]">
+            <View className="flex-1 bg-[#F5F5F5]">
                 <ImageViewing
                     images={galleryImages}
                     imageIndex={currentIndex}
@@ -125,7 +125,7 @@ export default function BoutiqueDetails() {
                                 <TouchableOpacity key={index} onPress={() => { setCurrentIndex(index); setVisible(true); }}>
                                     <Image
                                         source={{ uri: img.uri }}
-                                        className="w-32 h-40 mr-4 rounded-3xl bg-gray-100"
+                                        className="w-32 h-40 mr-4 rounded-3xl bg-gray-300"
                                         resizeMode="cover"
                                     />
                                 </TouchableOpacity>

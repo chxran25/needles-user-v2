@@ -1,5 +1,3 @@
-// File: app/(tabs)/index.tsx
-
 import {
     ScrollView,
     View,
@@ -28,7 +26,6 @@ export default function HomeScreen() {
     const [sidebarVisible, setSidebarVisible] = useState(false);
     const sidebarAnim = useRef(new Animated.Value(-SCREEN_WIDTH * 0.75)).current;
     const router = useRouter();
-
     const { setScrollY } = useScrollContext();
 
     const toggleSidebar = (show: boolean) => {
@@ -82,19 +79,46 @@ export default function HomeScreen() {
                 <Text className="text-base mb-4">Logout</Text>
             </Animated.View>
 
-            {/* Header */}
-            <View className="px-4 pt-4">
-                <View className="bg-[#FFE082] rounded-3xl px-4 pb-4 pt-4">
+            <ScrollView
+                onScroll={handleScroll}
+                scrollEventThrottle={16}
+                className="px-4 pt-4"
+                contentContainerStyle={{ paddingBottom: 80, flexGrow: 1 }}
+            >
+                {/* Logo with Sidebar Icon */}
+                <View className="flex-row items-center justify-between mb-3 px-1">
+                    <TouchableOpacity onPress={() => toggleSidebar(true)}>
+                        <Ionicons name="menu" size={27} color="black" />
+                    </TouchableOpacity>
+                    <Image
+                        source={require('@/assets/images/needles-logo.png')}
+                        style={{ width: 225, height: 85}}
+                        resizeMode="contain"
+                    />
+                    <View className="w-[26px]" />
+                    {/* Placeholder for spacing */}
+                </View>
+
+                {/* Deliver To */}
+                <View className="mb-3 px-1">
+                    <Text className="text-sm text-gray-400 tracking-wider">Deliver to</Text>
+                    <TouchableOpacity className="flex-row items-center">
+                        <Text className="text-xl font-semibold text-black font-serif mr-1">
+                            Flat xyz, Miyapur
+                        </Text>
+                        <Ionicons name="chevron-down" size={16} color="#000" />
+                    </TouchableOpacity>
+                </View>
+
+                {/* Search Bar */}
+                <View className="bg-background rounded-3xl px-0.5 pb-4 pt-3 mb-4">
                     <View className="flex-row items-center">
-                        <TouchableOpacity onPress={() => toggleSidebar(true)}>
-                            <Ionicons name="menu" size={24} color="black" />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            className="flex-1 ml-2"
-                            onPress={() => router.push('/search')}
-                            activeOpacity={1}
-                        >
-                            <View className="flex-row items-center bg-white rounded-full px-4 py-2 shadow-sm">
+                        <View className="flex-1 ml-1">
+                            <TouchableOpacity
+                                onPress={() => router.push('/search')}
+                                activeOpacity={1}
+                                className="flex-row items-center bg-white rounded-full px-4 py-2 shadow-sm w-full"
+                            >
                                 <Ionicons name="search" size={20} color="gray" />
                                 <TextInput
                                     className="flex-1 ml-2 text-sm"
@@ -105,34 +129,27 @@ export default function HomeScreen() {
                                     pointerEvents="none"
                                 />
                                 <Ionicons name="mic-outline" size={20} color="gray" />
-                            </View>
-                        </TouchableOpacity>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
-            </View>
 
-            {/* Content */}
-            <ScrollView
-                onScroll={handleScroll}
-                scrollEventThrottle={16}
-                className="px-4 pt-6"
-                contentContainerStyle={{ paddingBottom: 80, flexGrow: 1 }} // ✅ Added
-            >
-                {/* One Day Delivery Section */}
-                <Text className="text-2xl font-semibold mb-2">One Day Delivery</Text>
+
+                {/* One Day Delivery */}
+                <Text className="text-2xl font-bold text-textDark mb-2">One Day Delivery</Text>
                 <TouchableOpacity
                     className="mb-6 rounded-2xl overflow-hidden shadow-lg"
                     onPress={() => router.push('./one-day-delivery')}
                 >
                     <Image
                         source={require('@/assets/images/one-day-delivery.png')}
-                        className="w-full h-55"
+                        className="w-full h-56"
                         resizeMode="cover"
                     />
                 </TouchableOpacity>
 
                 {/* Recommended */}
-                <Text className="text-2xl font-semibold mb-3">Recommended</Text>
+                <Text className="text-2xl font-bold text-textDark mb-3">Recommended</Text>
                 <View className="gap-6 pb-10">
                     {boutiqueData.map((boutique) => (
                         <BoutiqueCard key={boutique.id} {...boutique} />

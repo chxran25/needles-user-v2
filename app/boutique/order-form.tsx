@@ -76,7 +76,7 @@ export default function OrderForm({ categories, onClose }: Props) {
             behavior={Platform.OS === "ios" ? "padding" : undefined}
             className="flex-1"
         >
-            <ScrollView className="flex-1 bg-[#FFF2D7]">
+            <ScrollView className="flex-1 bg-background">
                 {/* Header */}
                 <View className="bg-[#DDE3D2] rounded-b-3xl px-6 py-4 flex-row items-center justify-between shadow-sm">
                     <TouchableOpacity onPress={onClose} className="w-10 h-10 bg-white rounded-full items-center justify-center">
