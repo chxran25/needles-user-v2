@@ -1,110 +1,58 @@
-// File: app/(tabs)/orders.tsx
+import { View, Text, ScrollView, Pressable } from "react-native";
+import { useState } from "react";
+import OrderCard from "@/components/OrderCard";
 
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
-import { useState } from 'react';
-import OrderCard from '@/components/order/OrderCard';
+const TABS = ["Active", "Completed", "Cancelled"];
 
-const mockOrders = [
+const orders = [
     {
-        id: '1',
-        boutiqueName: 'Tattva Fashions',
-        dressType: 'Lehenga',
-        status: 'Processing',
-        totalAmount: '₹3200',
-        datePlaced: '01 May 2025',
+        id: "32598",
+        boutique: "Tattva Fashions",
+        type: "Lehenga",
+        description: "Sleeveless, side zip, extra flare",
+        ordered: "May 14, 2025",
+        delivery: "May 22, 2025",
+        price: "₹12,499",
+        status: "Pending",
+        statusColor: "bg-yellow-100 text-yellow-800",
     },
     {
-        id: '2',
-        boutiqueName: 'Miyapur Store',
-        dressType: 'Saree',
-        status: 'Shipped',
-        totalAmount: '₹1450',
-        datePlaced: '28 Apr 2025',
-    },
-    {
-        id: '3',
-        boutiqueName: 'Ethnic Elegance',
-        dressType: 'Blouse',
-        status: 'Delivered',
-        totalAmount: '₹850',
-        datePlaced: '20 Apr 2025',
+        id: "32581",
+        boutique: "Ethnic Elegance",
+        type: "Silk Saree",
+        description: "Blue Kanchipuram, golden border",
+        ordered: "May 10, 2025",
+        delivery: "May 18, 2025",
+        price: "₹8,999",
+        status: "Shipped",
+        statusColor: "bg-blue-100 text-blue-800",
     },
 ];
 
-const filterOptions = ['All', 'Processing', 'Shipped', 'Delivered'];
-
 export default function OrdersScreen() {
-    const [activeFilter, setActiveFilter] = useState('All');
-
-    const groupedOrders = mockOrders.reduce((acc: Record<string, typeof mockOrders>, order) => {
-        if (!acc[order.status]) acc[order.status] = [];
-        acc[order.status].push(order);
-        return acc;
-    }, {});
-
-    const renderFilteredOrders = () => {
-        if (activeFilter === 'All') {
-            return filterOptions
-                .filter((status) => status !== 'All' && groupedOrders[status])
-                .map((status) => (
-                    <View key={status} className="mb-6">
-                        <Text className="text-lg font-bold text-dark-100 mb-2">{status}</Text>
-                        {groupedOrders[status].map((order) => (
-                            <OrderCard key={order.id} {...order} />
-                        ))}
-                    </View>
-                ));
-        } else {
-            const filtered = mockOrders.filter((order) => order.status === activeFilter);
-            return filtered.map((order) => <OrderCard key={order.id} {...order} />);
-        }
-    };
+    const [activeTab, setActiveTab] = useState("Active");
 
     return (
-        <ScrollView className="flex-1 bg-[#FFF2D7]" contentContainerStyle={{ paddingBottom: 80 }}>
-            <View className="bg-gradient-to-b from-[#FFF2D7] to-[#FDEECF] rounded-b-3xl px-4 pt-12 pb-6 shadow-sm">
-                <Text className="text-3xl font-extrabold text-center text-dark-200">My Orders</Text>
-                <Text className="text-sm text-gray-500 text-center mt-1">You have {mockOrders.length} active orders</Text>
+        <View className="flex-1 bg-white px-4 pt-6">
+            <Text className="text-3xl font-bold mb-4">My Orders</Text>
 
-                {/* Filter Chips */}
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-4">
-                    {filterOptions.map((status) => {
-                        const isActive = activeFilter === status;
-                        return (
-                            <TouchableOpacity
-                                key={status}
-                                onPress={() => setActiveFilter(status)}
-                                className={`mr-3 px-5 py-2 rounded-full shadow-sm ${
-                                    isActive ? 'bg-dark-100' : 'bg-white border border-gray-300'
-                                }`}
-                            >
-                                <Text
-                                    className={`text-sm font-semibold ${
-                                        isActive ? 'text-white' : 'text-dark-100'
-                                    }`}
-                                >
-                                    {status}
-                                </Text>
-                            </TouchableOpacity>
-                        );
-                    })}
-                </ScrollView>
+            {/* Tabs */}
+            <View className="flex-row justify-between mb-4">
+                {TABS.map((tab) => (
+                    <Pressable key={tab} onPress={() => setActiveTab(tab)} className="flex-1 items-center">
+                        <Text className={`text-base font-semibold ${activeTab === tab ? "text-black" : "text-gray-400"}`}>
+                            {tab}
+                        </Text>
+                        {activeTab === tab && <View className="h-1 w-3/5 bg-black mt-1 rounded-full" />}
+                    </Pressable>
+                ))}
             </View>
 
-            <View className="px-4 pt-6">
-                {mockOrders.length === 0 ? (
-                    <View className="flex-1 justify-center items-center mt-32">
-                        <Text className="text-xl font-semibold text-gray-600 text-center">
-                            You haven't placed any orders yet.
-                        </Text>
-                        <Text className="text-base text-gray-500 mt-2 text-center px-6">
-                            Looks like your order list is empty. Once you place an order, you’ll see it right here!
-                        </Text>
-                    </View>
-                ) : (
-                    renderFilteredOrders()
-                )}
-            </View>
-        </ScrollView>
+            <ScrollView className="space-y-4">
+                {orders.map((order) => (
+                    <OrderCard key={order.id} order={order} />
+                ))}
+            </ScrollView>
+        </View>
     );
 }
