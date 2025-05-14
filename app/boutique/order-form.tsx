@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
+import { Picker } from "@react-native-picker/picker";
 
 interface Props {
     categories: string[];
@@ -23,6 +24,7 @@ export default function OrderForm({ categories, onClose }: Props) {
     const [imageUri, setImageUri] = useState<string | null>(null);
     const [instructions, setInstructions] = useState("");
     const [pickupRequested, setPickupRequested] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState<string>("");
 
     const [measurements, setMeasurements] = useState({
         chest: "",
@@ -40,15 +42,12 @@ export default function OrderForm({ categories, onClose }: Props) {
 
             const permissionResult = await requestMediaLibraryPermissionsAsync();
             if (!permissionResult.granted) {
-                Alert.alert(
-                    "Permission required",
-                    "We need access to your gallery to upload a reference image."
-                );
+                Alert.alert("Permission required", "Gallery access is needed.");
                 return;
             }
 
             const result = await launchImageLibraryAsync({
-                mediaTypes: ["images"], // ✅ Use string directly
+                mediaTypes: ["images"],
                 quality: 1,
             });
 
@@ -57,18 +56,8 @@ export default function OrderForm({ categories, onClose }: Props) {
             }
         } catch (error) {
             console.error("Image Picker error:", error);
-            Alert.alert("Error", "Failed to open gallery. Please try again.");
+            Alert.alert("Error", "Could not open gallery.");
         }
-    };
-
-
-
-    const handlePickupRequest = () => {
-        Alert.alert("Scheduled", "Pickup has been scheduled.");
-    };
-
-    const handleSubmitMeasurements = () => {
-        Alert.alert("Success", "Measurements submitted successfully!");
     };
 
     return (
@@ -76,10 +65,13 @@ export default function OrderForm({ categories, onClose }: Props) {
             behavior={Platform.OS === "ios" ? "padding" : undefined}
             className="flex-1"
         >
-            <ScrollView className="flex-1 bg-background">
+            <ScrollView className="flex-1 bg-[#FCFCFC]">
                 {/* Header */}
                 <View className="bg-[#DDE3D2] rounded-b-3xl px-6 py-4 flex-row items-center justify-between shadow-sm">
-                    <TouchableOpacity onPress={onClose} className="w-10 h-10 bg-white rounded-full items-center justify-center">
+                    <TouchableOpacity
+                        onPress={onClose}
+                        className="w-10 h-10 bg-white rounded-full items-center justify-center"
+                    >
                         <Ionicons name="chevron-down" size={20} color="black" />
                     </TouchableOpacity>
                     <Text className="text-2xl font-bold text-gray-800">
@@ -91,14 +83,37 @@ export default function OrderForm({ categories, onClose }: Props) {
                 <View className="px-6 pt-8">
                     {step === "design" ? (
                         <>
+                            {/* Dress Type Dropdown */}
+                            <View className="mb-8">
+                                <Text className="text-xl font-semibold mb-3 text-gray-800">
+                                    Choose Dress Type
+                                </Text>
+                                <View className="bg-white rounded-2xl overflow-hidden border border-gray-200">
+                                    <Picker
+                                        selectedValue={selectedCategory}
+                                        onValueChange={(itemValue) => setSelectedCategory(itemValue)}
+                                        mode="dropdown"
+                                    >
+                                        <Picker.Item label="Select category..." value="" />
+                                        {categories.map((cat, index) => (
+                                            <Picker.Item key={index} label={cat} value={cat} />
+                                        ))}
+                                    </Picker>
+                                </View>
+                            </View>
+
                             {/* Upload Image */}
-                            <View className="mb-10">
-                                <Text className="text-xl font-semibold mb-3 text-gray-800">Upload a Reference Image</Text>
+                            <View className="mb-8">
+                                <Text className="text-xl font-semibold mb-3 text-gray-800">
+                                    Upload a Reference Image
+                                </Text>
                                 <TouchableOpacity
                                     className="bg-white py-4 px-6 rounded-2xl items-center shadow-sm"
                                     onPress={handleChooseImage}
                                 >
-                                    <Text className="text-gray-600 font-medium">Choose from Gallery</Text>
+                                    <Text className="text-gray-600 font-medium">
+                                        Choose from Gallery
+                                    </Text>
                                 </TouchableOpacity>
                                 {imageUri && (
                                     <Image
@@ -111,9 +126,11 @@ export default function OrderForm({ categories, onClose }: Props) {
 
                             {/* Instructions */}
                             <View className="mb-10">
-                                <Text className="text-xl font-semibold mb-3 text-gray-800">Give Instructions</Text>
+                                <Text className="text-xl font-semibold mb-3 text-gray-800">
+                                    Give Instructions
+                                </Text>
                                 <Text className="text-sm text-gray-500 mb-3">
-                                    Type or speak the instructions you’d like the designer to follow.
+                                    Type or speak the instructions for the designer.
                                 </Text>
                                 <TextInput
                                     className="bg-white rounded-2xl p-4 text-base shadow-sm"
@@ -126,15 +143,16 @@ export default function OrderForm({ categories, onClose }: Props) {
                                 />
                             </View>
 
-                            {/* Voice Placeholder */}
+                            {/* Voice mic */}
                             <View className="items-center mb-12">
-                                <View className="bg-gray-200 w-14 h-14 rounded-full justify-center items-center">
+                                <View className="bg-[#DDE3D2] w-14 h-14 rounded-full justify-center items-center">
                                     <Ionicons name="mic-outline" size={24} color="black" />
                                 </View>
-                                <Text className="text-xs text-gray-500 mt-2">Voice input coming soon</Text>
+                                <Text className="text-xs text-gray-500 mt-2">
+                                    Voice input coming soon
+                                </Text>
                             </View>
 
-                            {/* Done Button */}
                             <TouchableOpacity
                                 onPress={() => setStep("measurements")}
                                 className="bg-black py-4 rounded-full shadow-lg items-center"
@@ -142,16 +160,13 @@ export default function OrderForm({ categories, onClose }: Props) {
                                 <Text className="text-white font-semibold text-base">Done</Text>
                             </TouchableOpacity>
                         </>
-
                     ) : (
                         <>
-
-                            {/* Title */}
                             <Text className="text-xl font-semibold mb-6 text-gray-800 text-center">
                                 Provide Your Measurements
                             </Text>
 
-                            {/* Measurement Inputs */}
+                            {/* Inputs */}
                             <View className="mb-10">
                                 <Text className="text-base text-gray-700 mb-3 font-medium">
                                     Type your measurements (in inches)
@@ -163,7 +178,10 @@ export default function OrderForm({ categories, onClose }: Props) {
                                             placeholder={key.charAt(0).toUpperCase() + key.slice(1)}
                                             value={val}
                                             onChangeText={(text) =>
-                                                setMeasurements((prev) => ({ ...prev, [key]: text.replace(/[^0-9.]/g, "") }))
+                                                setMeasurements((prev) => ({
+                                                    ...prev,
+                                                    [key]: text.replace(/[^0-9.]/g, ""),
+                                                }))
                                             }
                                             keyboardType="numeric"
                                             inputMode="numeric"
@@ -179,7 +197,8 @@ export default function OrderForm({ categories, onClose }: Props) {
                                     Would you like us to pick up a reference dress?
                                 </Text>
                                 <Text className="text-sm text-center text-gray-600 mb-3">
-                                    A delivery person will visit your address to collect and return it safely.
+                                    A delivery person will visit your address to collect and
+                                    return it safely.
                                 </Text>
                                 <TouchableOpacity
                                     onPress={() => setPickupRequested(!pickupRequested)}
@@ -193,26 +212,28 @@ export default function OrderForm({ categories, onClose }: Props) {
                                 </TouchableOpacity>
                             </View>
 
-                            {/* Final Done Button */}
+                            {/* Submit */}
                             <TouchableOpacity
                                 onPress={() => {
                                     const summary = {
+                                        selectedCategory,
                                         selectedImage: imageUri,
                                         instructions,
                                         measurements,
                                         pickupRequested,
                                     };
                                     console.log("Order Summary:", summary);
-                                    Alert.alert("Order Submitted", "Your details have been shared with the boutique.");
-                                    onClose(); // Closes the order form
+                                    Alert.alert(
+                                        "Order Submitted",
+                                        "Your details have been shared with the boutique."
+                                    );
+                                    onClose();
                                 }}
                                 className="bg-black py-4 rounded-full shadow-lg items-center mb-12"
                             >
                                 <Text className="text-white font-semibold text-base">Done</Text>
                             </TouchableOpacity>
                         </>
-
-
                     )}
                 </View>
             </ScrollView>
