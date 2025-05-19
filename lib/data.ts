@@ -6,6 +6,7 @@ export const data = [
         id: "tattva-fashions",
         name: "Tattva Fashions",
         location: "Miyapur, Hyderabad",
+        phone: "+919876543210", // ✅ Added
         tags: ["Lehengas", "Blouses", "Dresses"],
         description: "Welcome to Tattva Fashions, where tradition meets innovation!",
         image: require("@/assets/images/tattva.jpg"),
@@ -20,6 +21,7 @@ export const data = [
         id: "kurti-couture",
         name: "Kurti Couture",
         location: "Dilsukhnagar, Hyderabad",
+        phone: "+919845612378", // ✅ Added
         tags: ["Kurtis", "Casual"],
         description: "Trendy kurtis for every occasion. Style your everyday!",
         image: require("@/assets/images/kurti-couture.jpg"),
@@ -33,6 +35,7 @@ export const data = [
         id: "lehenga-leaf",
         name: "Lehenga Leaf",
         location: "Ameerpet, Hyderabad",
+        phone: "+919912345678", // ✅ Added
         tags: ["Lehengas", "Bridal"],
         description: "Your dream lehenga lives here — bridal and festive perfection.",
         image: require("@/assets/images/lehenga-leaf.jpg"),
@@ -102,6 +105,44 @@ export const sampleOrders: Order[] = [
         status: "Delivered",
         statusColor: "bg-green-100 text-green-800",
     },
+    {
+        id: "32579",
+        boutiqueId: "kurti-couture",
+        type: "Office Wear Kurti",
+        description: "Straight cut, plain cotton",
+        ordered: "Apr 28, 2025",
+        price: "₹999",
+        status: "Cancelled",
+        statusColor: "bg-red-100 text-red-800",
+    },
+    {
+        id: "32578",
+        boutiqueId: "lehenga-leaf",
+        type: "Bridal Dupatta",
+        description: "Zari border, heavy net",
+        ordered: "Apr 25, 2025",
+        price: "₹2,799",
+        status: "Shipped",
+        statusColor: "bg-blue-100 text-blue-800",
+    },
+    {
+        id: "32577",
+        boutiqueId: "tattva-fashions",
+        type: "Anarkali Gown",
+        description: "Pastel green, full flare",
+        ordered: "Apr 22, 2025",
+        price: "₹6,499",
+        status: "Delivered",
+        statusColor: "bg-green-100 text-green-800",
+    },
+    {
+        id: "32576",
+        boutiqueId: "tattva-fashions",
+        type: "Blouse",
+        description: "Boat neck, padded",
+        ordered: "Apr 18, 2025",
+        price: "₹1,299",
+        status: "Pending",
+        statusColor: "bg-yellow-100 text-yellow-800",
+    },
 ];
-
-
