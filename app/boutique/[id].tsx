@@ -16,7 +16,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState, useRef } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import ImageViewing from "react-native-image-viewing";
-import { boutiqueData } from "@/lib/boutiqueData";
+import { data } from "@/lib/data";
 import CategoryTags from "@/components/boutique/CategoryTags";
 import OrderForm from "@/app/boutique/order-form";
 
@@ -34,7 +34,7 @@ export default function BoutiqueDetails() {
     const slideAnim = useRef(new Animated.Value(0)).current;
     const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
 
-    const boutique = boutiqueData.find((b) => b.id === id) || boutiqueData[0];
+    const boutique = data.find((b) => b.id === id) || data[0];
 
     const isLehengaLeafOrSimilar = ["lehenga-leaf", "kurti-couture", "tattva-fashions"].includes(boutique.id);
 

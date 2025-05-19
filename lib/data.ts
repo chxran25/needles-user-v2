@@ -1,6 +1,7 @@
-// File: lib/boutiqueData.ts
+// File: lib/data.ts
+import { Order } from "@/types/order";
 
-export const boutiqueData = [
+export const data = [
     {
         id: "tattva-fashions",
         name: "Tattva Fashions",
@@ -67,6 +68,39 @@ export const popularDressTypes = [
     {
         name: "Dresses",
         image: require("@/assets/images/dress.jpg"),
+    },
+];
+
+export const sampleOrders: Order[] = [
+    {
+        id: "32598",
+        boutiqueId: "tattva-fashions",
+        type: "Lehenga",
+        description: "Sleeveless, side zip, extra flare",
+        ordered: "May 14, 2025",
+        price: "₹12,499",
+        status: "Pending",
+        statusColor: "bg-yellow-100 text-yellow-800",
+    },
+    {
+        id: "32581",
+        boutiqueId: "kurti-couture",
+        type: "Casual Kurti",
+        description: "Printed, breathable cotton",
+        ordered: "May 10, 2025",
+        price: "₹1,499",
+        status: "Shipped",
+        statusColor: "bg-blue-100 text-blue-800",
+    },
+    {
+        id: "32580",
+        boutiqueId: "lehenga-leaf",
+        type: "Bridal Lehenga",
+        description: "Full embroidery, 3-layer flare",
+        ordered: "May 02, 2025",
+        price: "₹24,999",
+        status: "Delivered",
+        statusColor: "bg-green-100 text-green-800",
     },
 ];
 

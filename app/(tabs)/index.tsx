@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRef, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { boutiqueData, popularDressTypes } from '@/lib/boutiqueData';
+import { data, popularDressTypes } from '@/lib/data';
 import BoutiqueCard from '@/components/boutique/BoutiqueCard';
 import { useScrollContext } from '@/context/ScrollContext';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -118,7 +118,7 @@ export default function HomeScreen() {
                 {/* Recommended Boutiques */}
                 {renderSectionHeader("Recommended")}
                 <View className="gap-6">
-                    {boutiqueData.slice(0, 3).map((boutique, i) => (
+                    {data.slice(0, 3).map((boutique, i) => (
                         <Animated.View key={boutique.id} entering={FadeInUp.delay(i * 100).duration(600)}>
                             <BoutiqueCard {...boutique} />
                         </Animated.View>
