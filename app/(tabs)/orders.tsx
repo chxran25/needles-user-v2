@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import OrderCard from "@/components/OrderCard";
 import { OrderStatus } from "@/types/order";
 import { sampleOrders } from "@/lib/data";
-import SkeletonCard from "@/components/SkeletonCard"; // ✅ Custom skeleton component
+import SkeletonCard from "@/components/SkeletonCard"; // Custom skeleton component
 
 const TABS: OrderStatus[] = ["Pending", "Shipped", "Delivered", "Cancelled"];
 
@@ -14,19 +14,25 @@ export default function OrdersScreen() {
     const filteredOrders = sampleOrders.filter((order) => order.status === activeTab);
 
     useEffect(() => {
-        setIsLoading(true);
         const timer = setTimeout(() => {
             setIsLoading(false);
-        }, 1200); // Simulate data load
+        }, 1200); // Simulate initial data load
         return () => clearTimeout(timer);
-    }, [activeTab]);
+    }, []); // Load only on initial mount
 
     return (
         <View className="flex-1 bg-white pt-6">
-            {/* Heading */}
-            <Text className="text-3xl font-bold px-4">My Orders</Text>
+            {/* Elegant Header */}
+            <View className="px-4 pt-2 pb-4">
+                <Text className="text-4xl font-bold text-gray-900 tracking-tight mb-2">
+                    My Orders
+                </Text>
+                <Text className="text-0.5xl text-gray-500 mb-4">
+                    Track your pending, shipped, or delivered orders
+                </Text>
+            </View>
 
-            {/* Scrollable Tabs */}
+            {/* Status Tabs */}
             <FlatList
                 horizontal
                 data={TABS}
@@ -34,8 +40,8 @@ export default function OrdersScreen() {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={{
                     paddingHorizontal: 16,
-                    paddingTop: 18,
-                    paddingBottom: 12,
+                    paddingTop: 0,
+                    paddingBottom: 20, // increased from 12 for more breathing room
                     gap: 20,
                 }}
                 renderItem={({ item: tab }) => (
@@ -46,7 +52,7 @@ export default function OrdersScreen() {
                             }`}
                         >
                             <Text
-                                className={`text-sm font-medium ${
+                                className={`text-m font-medium ${
                                     activeTab === tab ? "text-white" : "text-gray-500"
                                 }`}
                             >
@@ -57,9 +63,10 @@ export default function OrdersScreen() {
                 )}
             />
 
-            {/* Skeleton or Order List */}
+
+            {/* Orders List or Skeleton Loader */}
             {isLoading ? (
-                <View className="px-4 pt-2">
+                <View className="px-4 mt-2 space-y-4">
                     {[...Array(3)].map((_, i) => (
                         <SkeletonCard key={i} />
                     ))}
@@ -71,7 +78,7 @@ export default function OrdersScreen() {
                     renderItem={({ item }) => <OrderCard order={item} />}
                     contentContainerStyle={{
                         paddingHorizontal: 16,
-                        paddingTop: 0,
+                        paddingTop: 12, // Clean gap between tabs and first card
                         paddingBottom: 120,
                     }}
                     ListEmptyComponent={
