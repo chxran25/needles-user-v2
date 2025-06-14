@@ -2,22 +2,30 @@ import { Stack } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
-import "./globals.css";
-import "react-native-reanimated";
+import { ToastProvider } from "react-native-toast-notifications";
 import { ScrollProvider } from "@/context/ScrollContext";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
+import "react-native-reanimated";
+import "./globals.css";
 
 export default function RootLayout() {
+    const checking = useAuthRedirect(); // Handle auth-based redirects
+
+    if (checking) return null;
+
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
             <SafeAreaProvider>
                 <ScrollProvider>
                     <BottomSheetModalProvider>
-                        <Stack
-                            screenOptions={{
-                                animation: "slide_from_right", // You can change to 'fade' or others
-                                headerShown: false, // Optional: keep headers off
-                            }}
-                        />
+                        <ToastProvider
+                            placement="top"
+                            duration={3000}
+                            animationType="slide-in"
+                            offset={60}
+                        >
+                            <Stack screenOptions={{ headerShown: false }} />
+                        </ToastProvider>
                     </BottomSheetModalProvider>
                 </ScrollProvider>
             </SafeAreaProvider>
