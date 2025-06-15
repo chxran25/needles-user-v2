@@ -40,3 +40,8 @@ export const fetchRecommendedBoutiques = async (area = '') => {
     });
     return response.data.recommendedBoutiques;
 };
+
+export const fetchRecommendedDressTypes = async () => {
+    const response = await api.get("/User/recommended");
+    return response.data.dressTypes; // returns array of { label, imageUrl?, count, relevance }
+};

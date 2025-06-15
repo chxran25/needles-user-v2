@@ -14,22 +14,29 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useScrollContext } from '@/context/ScrollContext';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { fetchRecommendedBoutiques } from '@/services/api';
+import { fetchRecommendedBoutiques, fetchRecommendedDressTypes } from '@/services/api';
 import BoutiqueCard from '@/components/boutique/BoutiqueCard';
-import { popularDressTypes } from '@/lib/data';
 
 type Boutique = {
     _id: string;
     name: string;
-    dressTypes: { type: string; images?: string[]; _id: string }[]; // ✅ FIXED
+    dressTypes: { type: string; images?: string[]; _id: string }[];
     area: string;
     headerImage?: string;
     averageRating: number;
 };
 
+type DressType = {
+    label: string;
+    imageUrl?: string;
+    count?: number;
+    relevance?: number;
+};
+
 export default function HomeScreen() {
     const [search, setSearch] = useState('');
     const [recommendedBoutiques, setRecommendedBoutiques] = useState<Boutique[]>([]);
+    const [recommendedTypes, setRecommendedTypes] = useState<DressType[]>([]);
     const router = useRouter();
     const { setScrollY } = useScrollContext();
 
@@ -49,20 +56,23 @@ export default function HomeScreen() {
     );
 
     useEffect(() => {
-        const loadRecommended = async () => {
+        const loadRecommendedData = async () => {
             try {
                 const boutiques = await fetchRecommendedBoutiques();
                 setRecommendedBoutiques(boutiques);
+
+                const types = await fetchRecommendedDressTypes();
+                setRecommendedTypes(types);
             } catch (err: any) {
                 console.error(
-                    'Error fetching recommended boutiques:',
+                    'Error fetching recommended data:',
                     err.response?.status,
                     err.response?.data || err.message
                 );
             }
         };
 
-        loadRecommended();
+        loadRecommendedData();
     }, []);
 
     return (
@@ -118,21 +128,29 @@ export default function HomeScreen() {
                     />
                 </TouchableOpacity>
 
-                {/* Popular Categories */}
+                {/* Popular Categories (now dynamic) */}
                 {renderSectionHeader('Popular Categories')}
                 <View className="flex-row flex-wrap gap-4">
-                    {popularDressTypes.map((item, index) => (
+                    {recommendedTypes.map((item, index) => (
                         <TouchableOpacity
                             key={index}
                             className="w-[30%] items-center"
-                            onPress={() => router.push(`/search?query=${item.name.toLowerCase()}`)}
+                            onPress={() => router.push(`/search?query=${item.label.toLowerCase()}`)}
                         >
-                            <Image
-                                source={item.image}
-                                style={{ width: 100, height: 100, borderRadius: 12 }}
-                                resizeMode="cover"
-                            />
-                            <Text className="mt-2 text-sm text-center text-gray-700">{item.name}</Text>
+                            {item.imageUrl ? (
+                                <Image
+                                    source={{ uri: item.imageUrl }}
+                                    style={{ width: 100, height: 100, borderRadius: 12 }}
+                                    resizeMode="cover"
+                                />
+                            ) : (
+                                <View className="w-[100px] h-[100px] bg-gray-100 rounded-2xl items-center justify-center">
+                                    <Ionicons name="shirt-outline" size={40} color="gray" />
+                                </View>
+                            )}
+                            <Text className="mt-2 text-sm text-center text-gray-700">
+                                {item.label}
+                            </Text>
                         </TouchableOpacity>
                     ))}
                 </View>
@@ -141,17 +159,13 @@ export default function HomeScreen() {
                 {renderSectionHeader('Recommended')}
                 <View className="gap-6">
                     {recommendedBoutiques.map((boutique, i) => {
-                        // Step 1: Pick the first image from the array safely
                         const rawImage = Array.isArray(boutique.headerImage)
                             ? boutique.headerImage[0]
                             : boutique.headerImage;
 
-                        // Step 2: Build full image URL
                         const finalImage = rawImage?.startsWith('http')
                             ? rawImage
                             : `https://needles-v1.onrender.com${rawImage}`;
-
-                        // console.log("Header Image for", boutique.name, "→", finalImage); // ✅
 
                         return (
                             <Animated.View
