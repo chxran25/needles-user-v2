@@ -135,7 +135,16 @@ export default function HomeScreen() {
                         <TouchableOpacity
                             key={index}
                             className="w-[30%] items-center"
-                            onPress={() => router.push(`/search?query=${item.label.toLowerCase()}`)}
+                            onPress={() =>
+                                router.push({
+                                    pathname: '/top-boutique/[dressType]',
+                                    params: {
+                                        dressType: item.label, // ✅ keep original casing: "Kurta", "Gown"
+                                    },
+                                })
+                            }
+
+
                         >
                             {item.imageUrl ? (
                                 <Image

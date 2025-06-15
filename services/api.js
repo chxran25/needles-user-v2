@@ -8,7 +8,7 @@ const api = axios.create({
     },
 });
 
-// ✅ Attach token automatically
+// ✅ Automatically attach token to every request
 api.interceptors.request.use(
     async (config) => {
         const token = await SecureStore.getItemAsync('accessToken');
@@ -24,6 +24,7 @@ api.interceptors.request.use(
 );
 
 // ✅ API Methods
+
 export const userLogin = async ({ phone }) => {
     const response = await api.post("/User/login", { phone });
     return response.data;
@@ -44,4 +45,26 @@ export const fetchRecommendedBoutiques = async (area = '') => {
 export const fetchRecommendedDressTypes = async () => {
     const response = await api.get("/User/recommended");
     return response.data.dressTypes; // returns array of { label, imageUrl?, count, relevance }
+};
+
+// ✅ CORRECTED: includes /User prefix
+export const fetchTopBoutiquesForDressType = async (dressType) => {
+    if (!dressType) throw new Error("Dress type is required");
+
+    const url = `/User/recommended/dressType/${encodeURIComponent(dressType)}`;
+    console.log("📡 Fetching top boutiques for:", dressType);
+    console.log("🌐 API URL:", url);
+
+    try {
+        const response = await api.get(url);
+        console.log("✅ API Success:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("❌ API Error (fetchTopBoutiquesForDressType):", {
+            message: error.message,
+            status: error.response?.status,
+            data: error.response?.data,
+        });
+        throw error;
+    }
 };
