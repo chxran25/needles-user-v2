@@ -8,7 +8,7 @@ type Props = {
     name: string;
     tags: string[];
     location: string;
-    image: any; // local require() or remote uri string
+    image: string | number | null; // string URL or require() or null
     rating: number;
 };
 
@@ -20,16 +20,21 @@ export default function BoutiqueCard({
                                          image,
                                          rating,
                                      }: Props) {
+    const isRemoteImage = typeof image === 'string' && image.trim() !== '';
+
     return (
-        <Link href={{ pathname: "/boutique/[id]", params: { id } }} asChild>
+        <Link href={{ pathname: '/boutique/[id]', params: { id } }} asChild>
             <TouchableOpacity
                 className="bg-white rounded-xl px-4 py-1 shadow-md border border-gray-100"
                 activeOpacity={0.9}
             >
-
-                {/* Boutique Image (dynamic local or remote) */}
+                {/* Boutique Image */}
                 <Image
-                    source={typeof image === 'string' ? { uri: image } : image}
+                    source={
+                        isRemoteImage
+                            ? { uri: image }
+                            : require('@/assets/images/fallback-image.png') // 👈 fallback
+                    }
                     className="w-full h-40 rounded-lg"
                     resizeMode="cover"
                 />
@@ -58,7 +63,9 @@ export default function BoutiqueCard({
 
                 {/* Tags */}
                 <View className="mt-5">
-                    <Text className="text-l text-gray-600 font-medium mb-1">Known for:</Text>
+                    <Text className="text-l text-gray-600 font-medium mb-1">
+                        Known for:
+                    </Text>
                     <CategoryTags categories={tags} />
                 </View>
 

@@ -1,5 +1,3 @@
-// Cleaned and fixed index.tsx with working animations and removed unused code
-
 import {
     ScrollView,
     View,
@@ -7,24 +5,31 @@ import {
     TextInput,
     Image,
     TouchableOpacity,
-    Dimensions,
-    Animated as RNAnimated,
     NativeSyntheticEvent,
     NativeScrollEvent,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRef, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { data, popularDressTypes } from '@/lib/data';
-import BoutiqueCard from '@/components/boutique/BoutiqueCard';
 import { useScrollContext } from '@/context/ScrollContext';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import { fetchRecommendedBoutiques } from '@/services/api';
+import BoutiqueCard from '@/components/boutique/BoutiqueCard';
+import { popularDressTypes } from '@/lib/data';
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
+type Boutique = {
+    _id: string;
+    name: string;
+    dressTypes: string[];
+    area: string;
+    headerImage?: string;
+    averageRating: number;
+};
 
 export default function HomeScreen() {
     const [search, setSearch] = useState('');
+    const [recommendedBoutiques, setRecommendedBoutiques] = useState<Boutique[]>([]);
     const router = useRouter();
     const { setScrollY } = useScrollContext();
 
@@ -42,6 +47,23 @@ export default function HomeScreen() {
             <View className="flex-1 h-px bg-gray-300" />
         </Animated.View>
     );
+
+    useEffect(() => {
+        const loadRecommended = async () => {
+            try {
+                const boutiques = await fetchRecommendedBoutiques();
+                setRecommendedBoutiques(boutiques);
+            } catch (err: any) {
+                console.error(
+                    'Error fetching recommended boutiques:',
+                    err.response?.status,
+                    err.response?.data || err.message
+                );
+            }
+        };
+
+        loadRecommended();
+    }, []);
 
     return (
         <SafeAreaView className="flex-1 bg-light-100">
@@ -84,7 +106,7 @@ export default function HomeScreen() {
                 </View>
 
                 {/* One Day Delivery */}
-                {renderSectionHeader("One Day Delivery")}
+                {renderSectionHeader('One Day Delivery')}
                 <TouchableOpacity
                     className="rounded-2xl overflow-hidden shadow-lg"
                     onPress={() => router.push('./one-day-delivery')}
@@ -96,8 +118,8 @@ export default function HomeScreen() {
                     />
                 </TouchableOpacity>
 
-                {/* Popular Dresses Grid */}
-                {renderSectionHeader("Popular Categories")}
+                {/* Popular Categories */}
+                {renderSectionHeader('Popular Categories')}
                 <View className="flex-row flex-wrap gap-4">
                     {popularDressTypes.map((item, index) => (
                         <TouchableOpacity
@@ -116,11 +138,22 @@ export default function HomeScreen() {
                 </View>
 
                 {/* Recommended Boutiques */}
-                {renderSectionHeader("Recommended")}
+                {renderSectionHeader('Recommended')}
                 <View className="gap-6">
-                    {data.slice(0, 3).map((boutique, i) => (
-                        <Animated.View key={boutique.id} entering={FadeInUp.delay(i * 100).duration(600)}>
-                            <BoutiqueCard {...boutique} />
+                    {recommendedBoutiques.map((boutique, i) => (
+                        <Animated.View
+                            key={boutique._id}
+                            entering={FadeInUp.delay(i * 100).duration(600)}
+                        >
+                            <BoutiqueCard
+                                id={boutique._id}
+                                name={boutique.name}
+                                tags={boutique.dressTypes.map(dt => dt.type)} // ✅ FIXED
+                                location={boutique.area}
+                                image={boutique.headerImage || ''}
+                                rating={boutique.averageRating}
+                            />
+
                         </Animated.View>
                     ))}
                 </View>
