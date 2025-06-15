@@ -21,7 +21,7 @@ import { popularDressTypes } from '@/lib/data';
 type Boutique = {
     _id: string;
     name: string;
-    dressTypes: string[];
+    dressTypes: { type: string; images?: string[]; _id: string }[]; // ✅ FIXED
     area: string;
     headerImage?: string;
     averageRating: number;
@@ -140,22 +140,35 @@ export default function HomeScreen() {
                 {/* Recommended Boutiques */}
                 {renderSectionHeader('Recommended')}
                 <View className="gap-6">
-                    {recommendedBoutiques.map((boutique, i) => (
-                        <Animated.View
-                            key={boutique._id}
-                            entering={FadeInUp.delay(i * 100).duration(600)}
-                        >
-                            <BoutiqueCard
-                                id={boutique._id}
-                                name={boutique.name}
-                                tags={boutique.dressTypes.map(dt => dt.type)} // ✅ FIXED
-                                location={boutique.area}
-                                image={boutique.headerImage || ''}
-                                rating={boutique.averageRating}
-                            />
+                    {recommendedBoutiques.map((boutique, i) => {
+                        // Step 1: Pick the first image from the array safely
+                        const rawImage = Array.isArray(boutique.headerImage)
+                            ? boutique.headerImage[0]
+                            : boutique.headerImage;
 
-                        </Animated.View>
-                    ))}
+                        // Step 2: Build full image URL
+                        const finalImage = rawImage?.startsWith('http')
+                            ? rawImage
+                            : `https://needles-v1.onrender.com${rawImage}`;
+
+                        // console.log("Header Image for", boutique.name, "→", finalImage); // ✅
+
+                        return (
+                            <Animated.View
+                                key={boutique._id}
+                                entering={FadeInUp.delay(i * 100).duration(600)}
+                            >
+                                <BoutiqueCard
+                                    id={boutique._id}
+                                    name={boutique.name}
+                                    tags={boutique.dressTypes.map(dt => dt.type)}
+                                    location={boutique.area}
+                                    image={finalImage}
+                                    rating={boutique.averageRating}
+                                />
+                            </Animated.View>
+                        );
+                    })}
                 </View>
 
                 <TouchableOpacity
