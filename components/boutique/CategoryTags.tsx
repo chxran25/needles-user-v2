@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { View, Text } from "react-native";
+import {View, Text, Pressable, ScrollView} from "react-native";
 import * as SecureStore from "expo-secure-store";
 import { LinearGradient } from "expo-linear-gradient";
 
 type CategoryTagsProps = {
     categories: string[];
+    selected?: string; // ✅ optional — for interactive use
+    onSelect?: (type: string) => void; // ✅ optional — for interaction
 };
 
 type GradientPair = {
@@ -14,7 +16,6 @@ type GradientPair = {
 
 const STORAGE_KEY = "CATEGORY_GRADIENT_MAP";
 
-// 🎨 Clean, aesthetic gradients
 const GRADIENT_PALETTE: GradientPair[] = [
     { colors: ["#f6d365", "#fda085"] as const, textColor: "#7c2d12" },
     { colors: ["#a1c4fd", "#c2e9fb"] as const, textColor: "#1e3a8a" },
@@ -28,65 +29,69 @@ const GRADIENT_PALETTE: GradientPair[] = [
     { colors: ["#fdfbfb", "#ebedee"] as const, textColor: "#374151" },
 ];
 
-export default function CategoryTags({ categories }: CategoryTagsProps) {
+export default function CategoryTags({ categories, selected, onSelect }: CategoryTagsProps) {
     const [colorMap, setColorMap] = useState<Record<string, GradientPair>>({});
     const initialized = useRef(false);
 
     useEffect(() => {
         if (!initialized.current) {
             initialized.current = true;
-            loadAndAssignColors(categories);
+            assignAndStoreColors(categories);
         }
     }, [categories]);
 
-    const loadAndAssignColors = async (categories: string[]) => {
-        try {
-            const stored = await SecureStore.getItemAsync(STORAGE_KEY);
-            let existingMap: Record<string, GradientPair> = stored ? JSON.parse(stored) : {};
-            let updated = { ...existingMap };
-            let changed = false;
+    const assignAndStoreColors = async (categories: string[]) => {
+        const stored = await SecureStore.getItemAsync(STORAGE_KEY);
+        let existing: Record<string, GradientPair> = stored ? JSON.parse(stored) : {};
+        let updated = { ...existing };
+        let changed = false;
 
-            categories.forEach((tag) => {
-                const key = tag.trim().toLowerCase();
-                if (!updated[key]) {
-                    const random = GRADIENT_PALETTE[Math.floor(Math.random() * GRADIENT_PALETTE.length)];
-                    updated[key] = random;
-                    changed = true;
-                }
-            });
-
-            if (changed) {
-                await SecureStore.setItemAsync(STORAGE_KEY, JSON.stringify(updated));
+        categories.forEach((cat) => {
+            const key = cat.toLowerCase().trim();
+            if (!updated[key]) {
+                const random = GRADIENT_PALETTE[Math.floor(Math.random() * GRADIENT_PALETTE.length)];
+                updated[key] = random;
+                changed = true;
             }
+        });
 
-            setColorMap(updated);
-        } catch (e) {
-            console.error("Failed to load or update category colors:", e);
+        if (changed) {
+            await SecureStore.setItemAsync(STORAGE_KEY, JSON.stringify(updated));
         }
+
+        setColorMap(updated);
     };
 
     return (
-        <View className="flex-row flex-wrap gap-2">
-            {categories.map((tag, index) => {
-                const key = tag.trim().toLowerCase();
-                const { colors, textColor } = colorMap[key] || GRADIENT_PALETTE[0];
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-2">
+            <View className="flex-row gap-2 px-1">
+                {categories.map((tag, index) => {
+                    const key = tag.toLowerCase().trim();
+                    const { colors, textColor } = colorMap[key] || GRADIENT_PALETTE[0];
+                    const isSelected = selected === tag;
 
-                return (
-                    <LinearGradient
-                        key={index}
-                        colors={colors}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={{
-                            borderRadius: 999,
-                            paddingVertical: 6,
-                            paddingHorizontal: 14,
-                        }}
-                    >
-                        <Text style={{ color: textColor, fontWeight: "600", fontSize: 13 }}>{tag}</Text>
-                    </LinearGradient>
-                );
-            })}
-        </View>
+                    return (
+                        <Pressable key={index} onPress={() => onSelect?.(tag)}>
+                            <LinearGradient
+                                colors={colors}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={{
+                                    borderRadius: 999,
+                                    paddingVertical: 6,
+                                    paddingHorizontal: 14,
+                                    opacity: onSelect ? (isSelected ? 1 : 0.6) : 1,
+                                    borderWidth: isSelected ? 2 : 0,
+                                    borderColor: isSelected ? "#000" : "transparent",
+                                }}
+                            >
+                                <Text style={{ color: textColor, fontWeight: "600", fontSize: 13 }}>{tag}</Text>
+                            </LinearGradient>
+                        </Pressable>
+                    );
+                })}
+            </View>
+        </ScrollView>
     );
+
 }

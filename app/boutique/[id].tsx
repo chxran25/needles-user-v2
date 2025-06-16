@@ -1,10 +1,10 @@
 import OrderForm from "@/app/boutique/order-form";
-import CategoryTags from "@/components/boutique/CategoryTags";
 import BackButton from "@/components/common/BackButton";
 import { fetchBoutiqueDetails } from "@/services/api";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
+import DressTypeGallery from "@/components/boutique/DressTypeGallery";
 import {
     ActivityIndicator,
     Animated,
@@ -150,15 +150,15 @@ export default function BoutiqueDetails() {
                                 <View className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/60 to-transparent rounded-b-3xl" />
                             </ImageBackground>
                         </TouchableOpacity>
-                        
+
                         {/* Reusable Back Button Component */}
                         <BackButton />
                     </View>
 
                     {/* Premium Content Container */}
-                    <View className="bg-white mx-4 -mt-6 rounded-t-3xl shadow-xl z-10 pb-32">
-                        <View className="px-6 pt-8">
-                            {/* Boutique Name & Rating */}
+                    <View className="bg-white mx-4 -mt-10 rounded-t-[32px] shadow-2xl z-10 pb-40">
+                        <View className="px-5 pt-10 space-y-8">
+                        {/* Boutique Name & Rating */}
                             <View className="mb-6">
                                 <View className="flex-row justify-between items-start mb-3">
                                     <View className="flex-1">
@@ -181,7 +181,7 @@ export default function BoutiqueDetails() {
                                             </Text>
                                         </View>
                                     </View>
-                                    
+
                                     {/* Premium location badge */}
                                     <View className="bg-gradient-to-r from-orange-100 to-red-100 px-4 py-2 rounded-full border border-orange-200">
                                         <View className="flex-row items-center">
@@ -200,10 +200,11 @@ export default function BoutiqueDetails() {
                             {/* Category Tags with premium styling */}
                             <View className="mb-8">
                                 <Text className="text-lg font-bold text-gray-900 mb-4">Our Work</Text>
-                                <CategoryTags
-                                    categories={boutique.dressTypes?.map((d: { type: string }) => d.type) || []}
-                                />
+                                {boutique.dressTypes && boutique.dressTypes.length > 0 && (
+                                    <DressTypeGallery dressTypes={boutique.dressTypes} />
+                                )}
                             </View>
+
                         </View>
                     </View>
                 </ScrollView>
