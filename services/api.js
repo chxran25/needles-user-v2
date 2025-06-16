@@ -68,3 +68,23 @@ export const fetchTopBoutiquesForDressType = async (dressType) => {
         throw error;
     }
 };
+
+export const fetchSearchResults = async (query) => {
+    if (!query) throw new Error("Search query is required");
+
+    try {
+        const response = await api.get("/User/search", {
+            params: { query },
+        });
+        console.log("🔍 Search Results:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("❌ API Error (fetchSearchResults):", {
+            message: error.message,
+            status: error.response?.status,
+            data: error.response?.data,
+        });
+        throw error;
+    }
+};
+

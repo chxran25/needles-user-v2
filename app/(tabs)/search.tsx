@@ -1,68 +1,36 @@
-// File: app/(tabs)/search.tsx
-
+import BoutiqueCard from '@/components/boutique/BoutiqueCard';
+import { fetchSearchResults } from '@/services/api';
+import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
-    View,
-    Text,
-    TextInput,
-    ScrollView,
-    TouchableOpacity,
+    ActivityIndicator,
     KeyboardAvoidingView,
     Platform,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams } from 'expo-router';
-import BoutiqueCard from '@/components/boutique/BoutiqueCard';
-import CategoryTags from '@/components/boutique/CategoryTags';
 
-
-const sampleResults = [
-    {
-        id: 'blouse-haven',
-        name: 'Blouse Haven',
-        tags: ['Blouses', 'Custom Fit'],
-        location: 'Kukatpally, Hyderabad',
-        image: 'https://via.placeholder.com/300x160?text=Blouse+Haven',
-        rating: 4,
-    },
-    {
-        id: 'lehenga-leaf',
-        name: 'Lehenga Leaf',
-        tags: ['Lehengas', 'Bridal'],
-        location: 'Ameerpet, Hyderabad',
-        image: 'https://via.placeholder.com/300x160?text=Lehenga+Leaf',
-        rating: 5,
-    },
-    {
-        id: 'saree-studio',
-        name: 'Saree Studio',
-        tags: ['Sarees', 'Traditional'],
-        location: 'Banjara Hills, Hyderabad',
-        image: 'https://via.placeholder.com/300x160?text=Saree+Studio',
-        rating: 3,
-    },
-    {
-        id: 'kurti-couture',
-        name: 'Kurti Couture',
-        tags: ['Kurtis', 'Casual'],
-        location: 'Dilsukhnagar, Hyderabad',
-        image: 'https://via.placeholder.com/300x160?text=Kurti+Couture',
-        rating: 4,
-    },
-    {
-        id: 'ethnic-threads',
-        name: 'Ethnic Threads',
-        tags: ['Sarees', 'Blouses', 'Lehengas'],
-        location: 'Madhapur, Hyderabad',
-        image: 'https://via.placeholder.com/300x160?text=Ethnic+Threads',
-        rating: 5,
-    },
-];
+type Boutique = {
+    _id: string;
+    name: string;
+    area: string;
+    averageRating: number;
+    headerImage?: string;
+    dressTypes: { type: string }[];
+};
 
 export default function SearchScreen() {
     const [search, setSearch] = useState('');
     const [selectedTag, setSelectedTag] = useState('');
+    const [results, setResults] = useState<Boutique[]>([]);
+    const [fallbackMessage, setFallbackMessage] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
     const inputRef = useRef<TextInput>(null);
     const { autoFocus } = useLocalSearchParams();
 
@@ -75,11 +43,27 @@ export default function SearchScreen() {
         }
     }, [autoFocus]);
 
-    const filteredResults = sampleResults.filter(
-        (item) =>
-            item.name.toLowerCase().includes(search.toLowerCase()) &&
-            (!selectedTag || item.tags.includes(selectedTag))
-    );
+    const handleSearch = async () => {
+        if (!search.trim()) return;
+        setLoading(true);
+        setError('');
+        setFallbackMessage('');
+        try {
+            const res = await fetchSearchResults(search.trim());
+            console.log("🔍 API response:", res);
+            setResults(res?.results || []);
+            setFallbackMessage(res.message || '');
+        } catch (err) {
+            console.error("❌ Search Error:", err);
+            setError('Something went wrong while searching.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const filteredResults = selectedTag
+        ? results.filter((item) => item.dressTypes?.some((d: { type: string }) => d.type === selectedTag))
+        : results;
 
     return (
         <SafeAreaView className="flex-1 bg-background">
@@ -90,9 +74,9 @@ export default function SearchScreen() {
                 <ScrollView
                     className="flex-1 px-4 pt-10"
                     keyboardShouldPersistTaps="handled"
-                    contentContainerStyle={{ paddingBottom: 80, flexGrow: 1 }} // ✅ Added
+                    contentContainerStyle={{ paddingBottom: 80, flexGrow: 1 }}
                 >
-                {/* Search Bar */}
+                    {/* Search Bar */}
                     <View className="flex-row items-center bg-white rounded-full px-4 py-2 shadow-sm mb-4">
                         <Ionicons name="search" size={20} color="gray" />
                         <TextInput
@@ -101,6 +85,7 @@ export default function SearchScreen() {
                             placeholder="Search for a Boutique or Style"
                             value={search}
                             onChangeText={setSearch}
+                            onSubmitEditing={handleSearch}
                             returnKeyType="search"
                         />
                         <Ionicons name="mic-outline" size={20} color="gray" />
@@ -111,7 +96,12 @@ export default function SearchScreen() {
                         {["Lehengas", "Blouses", "Sarees", "Kurtis", "Bridal"].map((tag) => (
                             <TouchableOpacity
                                 key={tag}
-                                onPress={() => setSelectedTag(tag === selectedTag ? '' : tag)}
+                                onPress={() => {
+                                    const newTag = tag === selectedTag ? '' : tag;
+                                    setSelectedTag(newTag);
+                                    setSearch(newTag);
+                                    handleSearch(); // auto-search on tag press
+                                }}
                                 className={`px-3 py-1 rounded-full ${
                                     selectedTag === tag ? 'bg-blue-600' : 'bg-blue-100'
                                 }`}
@@ -127,11 +117,28 @@ export default function SearchScreen() {
                         ))}
                     </View>
 
-                    {/* Search Results */}
-                    {filteredResults.length > 0 ? (
+                    {/* Fallback Message */}
+                    {fallbackMessage ? (
+                        <Text className="text-center text-gray-400 mb-2">{fallbackMessage}</Text>
+                    ) : null}
+
+                    {/* Results */}
+                    {loading ? (
+                        <ActivityIndicator size="large" className="mt-10" />
+                    ) : error ? (
+                        <Text className="text-center text-red-500 mt-20">{error}</Text>
+                    ) : filteredResults.length > 0 ? (
                         <View className="gap-4 mb-10">
                             {filteredResults.map((boutique) => (
-                                <BoutiqueCard key={boutique.id} {...boutique} />
+                                <BoutiqueCard
+                                    key={boutique._id}
+                                    id={boutique._id}
+                                    name={boutique.name}
+                                    location={boutique.area}
+                                    rating={boutique.averageRating}
+                                    image={boutique.headerImage || 'https://via.placeholder.com/300x160'}
+                                    tags={boutique.dressTypes?.map((d: { type: string }) => d.type) || []}
+                                />
                             ))}
                         </View>
                     ) : (
