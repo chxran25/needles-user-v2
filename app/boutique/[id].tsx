@@ -1,58 +1,63 @@
-// app/boutique/[id].tsx
-
+import OrderForm from "@/app/boutique/order-form";
+import CategoryTags from "@/components/boutique/CategoryTags";
+import BackButton from "@/components/common/BackButton";
+import { fetchBoutiqueDetails } from "@/services/api";
+import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import {
-    View,
-    Text,
-    Image,
-    ScrollView,
-    TouchableOpacity,
-    ImageBackground,
+    ActivityIndicator,
     Animated,
     Dimensions,
+    ImageBackground,
     KeyboardAvoidingView,
     Platform,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState, useRef } from "react";
-import { Ionicons } from "@expo/vector-icons";
 import ImageViewing from "react-native-image-viewing";
-import { data } from "@/lib/data";
-import CategoryTags from "@/components/boutique/CategoryTags";
-import OrderForm from "@/app/boutique/order-form";
 
-const placeholderImage = require("@/assets/images/gallery-banner.jpg");
-const work1 = require("@/assets/images/boutique-work-1.jpg");
-const work2 = require("@/assets/images/boutique-work-2.jpg");
+type Boutique = {
+    _id: string;
+    name: string;
+    area: string;
+    averageRating: number;
+    headerImage?: string[] | string;
+    description?: string;
+    gallery?: string[];
+    dressTypes?: { type: string }[];
+};
+
 const SCREEN_HEIGHT = Dimensions.get("window").height;
 
 export default function BoutiqueDetails() {
     const { id } = useLocalSearchParams();
-    const router = useRouter();
     const [visible, setVisible] = useState(false);
     const [currentIndex, setCurrentIndex] = useState(0);
-
     const slideAnim = useRef(new Animated.Value(0)).current;
     const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
+    const [boutique, setBoutique] = useState<Boutique | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
-    const boutique = data.find((b) => b.id === id) || data[0];
+    useEffect(() => {
+        if (id) fetchBoutique();
+    }, [id]);
 
-    const isLehengaLeafOrSimilar = ["lehenga-leaf", "kurti-couture", "tattva-fashions"].includes(boutique.id);
-
-    const bannerImageUri = typeof boutique.image === "number"
-        ? Image.resolveAssetSource(boutique.image).uri
-        : boutique.image;
-
-    const galleryImages = [
-        { uri: bannerImageUri },
-        ...(
-            isLehengaLeafOrSimilar
-                ? [
-                    { uri: Image.resolveAssetSource(work1).uri },
-                    { uri: Image.resolveAssetSource(work2).uri }
-                ]
-                : boutique.gallery?.map((uri) => ({ uri })) || []
-        )
-    ];
+    const fetchBoutique = async () => {
+        setLoading(true);
+        setError("");
+        try {
+            const data = await fetchBoutiqueDetails(id as string);
+            setBoutique(data);
+        } catch (err) {
+            setError("Failed to load boutique details.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const toggleOrderForm = () => {
         if (!isOrderFormOpen) {
@@ -78,12 +83,52 @@ export default function BoutiqueDetails() {
         outputRange: [SCREEN_HEIGHT, 0],
     });
 
+    if (loading) {
+        return (
+            <View className="flex-1 justify-center items-center bg-gray-50">
+                <ActivityIndicator size="large" color="#FF6B6B" />
+            </View>
+        );
+    }
+
+    if (error || !boutique) {
+        return (
+            <View className="flex-1 justify-center items-center px-4 bg-gray-50">
+                <Text className="text-red-500 text-center text-lg">{error || "Boutique not found."}</Text>
+            </View>
+        );
+    }
+
+    // Format headerImage URL safely
+    const headerImage =
+        Array.isArray(boutique.headerImage) && boutique.headerImage.length > 0
+            ? boutique.headerImage[0]
+            : typeof boutique.headerImage === "string"
+                ? boutique.headerImage
+                : null;
+
+    const bannerImageUri =
+        headerImage && headerImage.startsWith("http")
+            ? headerImage
+            : headerImage
+                ? `https://needles-v1.onrender.com${headerImage}`
+                : "https://via.placeholder.com/600x300?text=Boutique+Banner";
+
+    const galleryImages = [
+        { uri: bannerImageUri },
+        ...(boutique.gallery || [])
+            .filter((uri): uri is string => typeof uri === "string" && uri.trim().length > 0)
+            .map((uri) => ({
+                uri: uri.startsWith("http") ? uri : `https://needles-v1.onrender.com${uri}`,
+            })),
+    ];
+
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             className="flex-1"
         >
-            <View className="flex-1 bg-[#F5F5F5]">
+            <View className="flex-1 bg-gray-50">
                 <ImageViewing
                     images={galleryImages}
                     imageIndex={currentIndex}
@@ -91,85 +136,101 @@ export default function BoutiqueDetails() {
                     onRequestClose={() => setVisible(false)}
                 />
 
-                <ScrollView className="flex-1">
-                    {/* Header Banner */}
+                <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+                    {/* Premium Header Banner */}
                     <View className="relative">
                         <TouchableOpacity onPress={() => { setCurrentIndex(0); setVisible(true); }}>
                             <ImageBackground
-                                source={typeof boutique.image === "number" ? boutique.image : { uri: boutique.image }}
-                                className="w-full h-72 justify-end pb-6"
-                                imageStyle={{ borderBottomLeftRadius: 30, borderBottomRightRadius: 30 }}
+                                source={{ uri: bannerImageUri }}
+                                className="w-full h-80"
+                                imageStyle={{ borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }}
                                 resizeMode="cover"
-                            />
+                            >
+                                {/* Gradient overlay for better text visibility */}
+                                <View className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/60 to-transparent rounded-b-3xl" />
+                            </ImageBackground>
                         </TouchableOpacity>
-                        <TouchableOpacity
-                            onPress={() => router.back()}
-                            className="absolute top-10 left-4 bg-white/80 p-2 rounded-full"
-                        >
-                            <Ionicons name="arrow-back" size={22} color="black" />
-                        </TouchableOpacity>
+                        
+                        {/* Reusable Back Button Component */}
+                        <BackButton />
                     </View>
 
-                    {/* Boutique Info */}
-                    <View className="px-4 pt-6 pb-32">
-                        <View className="flex-row justify-between items-center mb-4">
-                            <Text className="text-2xl font-bold text-gray-900">{boutique.name}</Text>
-                            <View className="flex-row">
-                                {Array.from({ length: boutique.rating }).map((_, i) => (
-                                    <Ionicons key={i} name="star" size={18} color="#facc15" />
-                                ))}
-                                {Array.from({ length: 5 - boutique.rating }).map((_, i) => (
-                                    <Ionicons key={`empty-${i}`} name="star-outline" size={18} color="#d1d5db" />
-                                ))}
+                    {/* Premium Content Container */}
+                    <View className="bg-white mx-4 -mt-6 rounded-t-3xl shadow-xl z-10 pb-32">
+                        <View className="px-6 pt-8">
+                            {/* Boutique Name & Rating */}
+                            <View className="mb-6">
+                                <View className="flex-row justify-between items-start mb-3">
+                                    <View className="flex-1">
+                                        <Text className="text-3xl font-bold text-gray-900 mb-2">{boutique.name}</Text>
+                                        <View className="flex-row items-center">
+                                            <View className="flex-row mr-2">
+                                                {Array.from({ length: 5 }).map((_, i) => {
+                                                    const rating = boutique.averageRating || 0;
+                                                    if (i + 1 <= Math.floor(rating)) {
+                                                        return <Ionicons key={i} name="star" size={16} color="#FFD700" />;
+                                                    } else if (i < rating) {
+                                                        return <Ionicons key={i} name="star-half" size={16} color="#FFD700" />;
+                                                    } else {
+                                                        return <Ionicons key={i} name="star-outline" size={16} color="#E5E7EB" />;
+                                                    }
+                                                })}
+                                            </View>
+                                            <Text className="text-sm text-gray-600 font-medium">
+                                                {boutique.averageRating?.toFixed(1) || "0.0"} Rating
+                                            </Text>
+                                        </View>
+                                    </View>
+                                    
+                                    {/* Premium location badge */}
+                                    <View className="bg-gradient-to-r from-orange-100 to-red-100 px-4 py-2 rounded-full border border-orange-200">
+                                        <View className="flex-row items-center">
+                                            <Ionicons name="location" size={14} color="#EA580C" />
+                                            <Text className="text-orange-700 font-semibold text-sm ml-1">
+                                                {boutique.area || "Location"}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                </View>
+                            </View>
+
+                            {/* Divider */}
+                            <View className="h-px bg-gray-200 mb-6" />
+
+                            {/* Category Tags with premium styling */}
+                            <View className="mb-8">
+                                <Text className="text-lg font-bold text-gray-900 mb-4">Our Work</Text>
+                                <CategoryTags
+                                    categories={boutique.dressTypes?.map((d: { type: string }) => d.type) || []}
+                                />
                             </View>
                         </View>
-
-                        <Text className="text-sm font-semibold text-gray-700 mb-1">— Description</Text>
-                        <View className="bg-green-100 px-4 py-3 rounded-2xl mb-4">
-                            <Text className="italic text-gray-800 text-center text-sm">{boutique.description}</Text>
-                        </View>
-
-                        <CategoryTags categories={boutique.tags} />
-
-                        {/* Gallery */}
-                        <View className="flex-row items-center mt-6 mb-3">
-                            <Text className="text-sm font-semibold text-gray-700 mr-2">— Our Work</Text>
-                            <View className="flex-1 h-px bg-gray-400" />
-                        </View>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6">
-                            {galleryImages.slice(1).map((img, index) => (
-                                <TouchableOpacity key={index} onPress={() => { setCurrentIndex(index + 1); setVisible(true); }}>
-                                    <Image
-                                        source={{ uri: img.uri }}
-                                        className="w-32 h-40 mr-4 rounded-3xl bg-gray-300"
-                                        resizeMode="cover"
-                                    />
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
                     </View>
                 </ScrollView>
 
-                {/* Place Your Order Button */}
+                {/* Premium Order Button */}
                 <TouchableOpacity
-                    className={`absolute bottom-6 left-4 right-4 bg-black py-4 rounded-2xl shadow-xl z-10 ${isOrderFormOpen ? "opacity-0" : ""}`}
+                    className={`absolute bottom-6 left-4 right-4 shadow-2xl z-10 ${isOrderFormOpen ? "opacity-0" : ""}`}
                     onPress={toggleOrderForm}
                     style={{ opacity: isOrderFormOpen ? 0 : 1 }}
                 >
-                    <View className="flex-row justify-center items-center">
-                        <Ionicons name="chevron-up" size={20} color="white" />
-                        <Text className="ml-1 text-white font-semibold text-base">Place Your Order</Text>
+                    <View className="bg-gradient-to-r from-orange-500 to-red-500 py-4 px-6 rounded-2xl">
+                        <View className="flex-row justify-center items-center">
+                            <Ionicons name="bag-add" size={22} color="white" />
+                            <Text className="ml-2 text-white font-bold text-lg">Place Your Order</Text>
+                            <Ionicons name="chevron-up" size={20} color="white" className="ml-2" />
+                        </View>
                     </View>
                 </TouchableOpacity>
 
                 {/* Animated Order Form */}
                 {isOrderFormOpen && (
                     <Animated.View
-                        className="absolute left-0 right-0 bg-white z-20 rounded-t-3xl shadow-xl overflow-hidden"
+                        className="absolute left-0 right-0 bg-white z-20 rounded-t-3xl shadow-2xl overflow-hidden"
                         style={{ transform: [{ translateY }], height: SCREEN_HEIGHT }}
                     >
                         <OrderForm
-                            categories={boutique.tags}
+                            categories={boutique.dressTypes?.map((d: { type: string }) => d.type) || []}
                             onClose={toggleOrderForm}
                         />
                     </Animated.View>

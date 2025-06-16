@@ -1,47 +1,36 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useNavigation } from 'expo-router';
-import { TouchableOpacity, View, Text } from 'react-native';
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { TouchableOpacity } from "react-native";
 
-type BackButtonProps = {
-    label?: string;
-    showText?: boolean;
-    color?: string;
+interface BackButtonProps {
+    onPress?: () => void;
+    className?: string;
     iconSize?: number;
-};
+    iconColor?: string;
+}
 
-export default function BackButton({
-                                       label = 'Back',
-                                       showText = false,
-                                       color = 'black',
-                                       iconSize = 20,
-                                   }: BackButtonProps) {
+export default function BackButton({ 
+    onPress, 
+    className = "absolute top-12 left-4 bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg",
+    iconSize = 20,
+    iconColor = "black"
+}: BackButtonProps) {
     const router = useRouter();
-    const navigation = useNavigation();
 
-    const handleBack = () => {
-        // @ts-ignore – ignore TS error about isFocused
-        if (navigation.canGoBack?.()) {
-            router.back();
+    const handlePress = () => {
+        if (onPress) {
+            onPress();
         } else {
-            console.warn('🔁 No screen to go back to, going to Home');
-            router.push('/');
+            router.back();
         }
     };
 
     return (
         <TouchableOpacity
-            onPress={handleBack}
-            className="flex-row items-center"
-            activeOpacity={0.8}
+            onPress={handlePress}
+            className={className}
         >
-            <View className="w-10 h-10 rounded-full bg-white items-center justify-center shadow-sm">
-                <Ionicons name="arrow-back" size={iconSize} color={color} />
-            </View>
-            {showText && (
-                <Text className="ml-2 text-base font-medium text-gray-800">
-                    {label}
-                </Text>
-            )}
+            <Ionicons name="arrow-back" size={iconSize} color={iconColor} />
         </TouchableOpacity>
     );
 }
