@@ -16,6 +16,7 @@ import { useScrollContext } from '@/context/ScrollContext';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { fetchRecommendedBoutiques, fetchRecommendedDressTypes } from '@/services/api';
 import BoutiqueCard from '@/components/boutique/BoutiqueCard';
+import RippleCircleOverlay from '@/components/RippleCircleOverlay';
 
 type Boutique = {
     _id: string;
@@ -37,6 +38,8 @@ export default function HomeScreen() {
     const [search, setSearch] = useState('');
     const [recommendedBoutiques, setRecommendedBoutiques] = useState<Boutique[]>([]);
     const [recommendedTypes, setRecommendedTypes] = useState<DressType[]>([]);
+    const [ripple, setRipple] = useState<{ x: number; y: number; label: string } | null>(null);
+
     const router = useRouter();
     const { setScrollY } = useScrollContext();
 
@@ -128,23 +131,17 @@ export default function HomeScreen() {
                     />
                 </TouchableOpacity>
 
-                {/* Popular Categories (now dynamic) */}
+                {/* Popular Categories (with ripple animation) */}
                 {renderSectionHeader('Popular Categories')}
                 <View className="flex-row flex-wrap gap-4">
                     {recommendedTypes.map((item, index) => (
                         <TouchableOpacity
                             key={index}
                             className="w-[30%] items-center"
-                            onPress={() =>
-                                router.push({
-                                    pathname: '/top-boutique/[dressType]',
-                                    params: {
-                                        dressType: item.label, // ✅ keep original casing: "Kurta", "Gown"
-                                    },
-                                })
-                            }
-
-
+                            onPress={(e) => {
+                                const { pageX, pageY } = e.nativeEvent;
+                                setRipple({ x: pageX, y: pageY, label: item.label });
+                            }}
                         >
                             {item.imageUrl ? (
                                 <Image
@@ -201,6 +198,26 @@ export default function HomeScreen() {
                     <Text className="text-primary font-medium">View More Boutiques →</Text>
                 </TouchableOpacity>
             </ScrollView>
+
+            {/* Ripple Animation Overlay */}
+            {ripple && (
+                <RippleCircleOverlay
+                    x={ripple.x}
+                    y={ripple.y}
+                    onFinish={() => {
+                        router.replace({
+                            pathname: '/top-boutique/[dressType]',
+                            params: { dressType: ripple.label },
+                        });
+
+                        // Delay removal of ripple until next frame
+                        setTimeout(() => {
+                            setRipple(null);
+                        }, 100); // enough time for screen to start rendering
+                    }}
+                />
+
+            )}
         </SafeAreaView>
     );
 }
