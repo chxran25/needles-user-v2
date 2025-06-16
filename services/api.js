@@ -88,3 +88,15 @@ export const fetchSearchResults = async (query) => {
     }
 };
 
+export const fetchBoutiqueDetails = async (id) => {
+  if (!id) throw new Error("Boutique ID is required");
+
+  try {
+    const response = await api.get(`/User/boutique/${id}`);
+    return response.data.boutique;
+  } catch (error) {
+    console.error("❌ API Error (fetchBoutiqueDetails):", error);
+    throw error;
+  }
+};
+

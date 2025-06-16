@@ -32,7 +32,7 @@ export default function SearchScreen() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const inputRef = useRef<TextInput>(null);
-    const { autoFocus } = useLocalSearchParams();
+    const {autoFocus} = useLocalSearchParams();
 
     useEffect(() => {
         if (autoFocus === 'true') {
@@ -74,11 +74,11 @@ export default function SearchScreen() {
                 <ScrollView
                     className="flex-1 px-4 pt-10"
                     keyboardShouldPersistTaps="handled"
-                    contentContainerStyle={{ paddingBottom: 80, flexGrow: 1 }}
+                    contentContainerStyle={{paddingBottom: 80, flexGrow: 1}}
                 >
                     {/* Search Bar */}
                     <View className="flex-row items-center bg-white rounded-full px-4 py-2 shadow-sm mb-4">
-                        <Ionicons name="search" size={20} color="gray" />
+                        <Ionicons name="search" size={20} color="gray"/>
                         <TextInput
                             ref={inputRef}
                             className="flex-1 ml-2 text-sm"
@@ -88,7 +88,7 @@ export default function SearchScreen() {
                             onSubmitEditing={handleSearch}
                             returnKeyType="search"
                         />
-                        <Ionicons name="mic-outline" size={20} color="gray" />
+                        <Ionicons name="mic-outline" size={20} color="gray"/>
                     </View>
 
                     {/* Tag Filters */}
@@ -124,7 +124,7 @@ export default function SearchScreen() {
 
                     {/* Results */}
                     {loading ? (
-                        <ActivityIndicator size="large" className="mt-10" />
+                        <ActivityIndicator size="large" className="mt-10"/>
                     ) : error ? (
                         <Text className="text-center text-red-500 mt-20">{error}</Text>
                     ) : filteredResults.length > 0 ? (

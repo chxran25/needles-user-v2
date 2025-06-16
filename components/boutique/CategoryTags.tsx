@@ -1,45 +1,92 @@
-import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { View, Text } from "react-native";
+import * as SecureStore from "expo-secure-store";
+import { LinearGradient } from "expo-linear-gradient";
 
 type CategoryTagsProps = {
     categories: string[];
-    onSelectCategory?: (category: string) => void;
 };
 
-const CategoryTags = ({ categories, onSelectCategory }: CategoryTagsProps) => {
-    const getCategoryColor = (category: string) => {
-        const colorMap: Record<string, { bg: string; text: string }> = {
-            Lehengas: { bg: "bg-purple-100", text: "text-purple-700" },
-            Blouses: { bg: "bg-orange-100", text: "text-orange-700" },
-            Dresses: { bg: "bg-green-100", text: "text-green-700" },
-            Bridal: { bg: "bg-red-100", text: "text-red-700" },
-            Ethnic: { bg: "bg-yellow-100", text: "text-yellow-800" },
-            Western: { bg: "bg-blue-100", text: "text-blue-700" },
-            Casual: { bg: "bg-gray-200", text: "text-gray-700" },
-        };
+type GradientPair = {
+    colors: readonly [string, string];
+    textColor: string;
+};
 
-        return colorMap[category] || { bg: "bg-light-200", text: "text-textDark" };
+const STORAGE_KEY = "CATEGORY_GRADIENT_MAP";
+
+// 🎨 Clean, aesthetic gradients
+const GRADIENT_PALETTE: GradientPair[] = [
+    { colors: ["#f6d365", "#fda085"] as const, textColor: "#7c2d12" },
+    { colors: ["#a1c4fd", "#c2e9fb"] as const, textColor: "#1e3a8a" },
+    { colors: ["#fbc2eb", "#a6c1ee"] as const, textColor: "#4b0082" },
+    { colors: ["#84fab0", "#8fd3f4"] as const, textColor: "#065f46" },
+    { colors: ["#ffecd2", "#fcb69f"] as const, textColor: "#92400e" },
+    { colors: ["#c2e59c", "#64b3f4"] as const, textColor: "#1f2937" },
+    { colors: ["#fad0c4", "#ffd1ff"] as const, textColor: "#6b21a8" },
+    { colors: ["#e0c3fc", "#8ec5fc"] as const, textColor: "#3730a3" },
+    { colors: ["#d4fc79", "#96e6a1"] as const, textColor: "#365314" },
+    { colors: ["#fdfbfb", "#ebedee"] as const, textColor: "#374151" },
+];
+
+export default function CategoryTags({ categories }: CategoryTagsProps) {
+    const [colorMap, setColorMap] = useState<Record<string, GradientPair>>({});
+    const initialized = useRef(false);
+
+    useEffect(() => {
+        if (!initialized.current) {
+            initialized.current = true;
+            loadAndAssignColors(categories);
+        }
+    }, [categories]);
+
+    const loadAndAssignColors = async (categories: string[]) => {
+        try {
+            const stored = await SecureStore.getItemAsync(STORAGE_KEY);
+            let existingMap: Record<string, GradientPair> = stored ? JSON.parse(stored) : {};
+            let updated = { ...existingMap };
+            let changed = false;
+
+            categories.forEach((tag) => {
+                const key = tag.trim().toLowerCase();
+                if (!updated[key]) {
+                    const random = GRADIENT_PALETTE[Math.floor(Math.random() * GRADIENT_PALETTE.length)];
+                    updated[key] = random;
+                    changed = true;
+                }
+            });
+
+            if (changed) {
+                await SecureStore.setItemAsync(STORAGE_KEY, JSON.stringify(updated));
+            }
+
+            setColorMap(updated);
+        } catch (e) {
+            console.error("Failed to load or update category colors:", e);
+        }
     };
 
     return (
         <View className="flex-row flex-wrap gap-2">
-            {categories.map((category, index) => {
-                const { bg, text } = getCategoryColor(category);
+            {categories.map((tag, index) => {
+                const key = tag.trim().toLowerCase();
+                const { colors, textColor } = colorMap[key] || GRADIENT_PALETTE[0];
 
                 return (
-                    <TouchableOpacity
-                        key={`${category}-${index}`}
-                        accessibilityRole="button"
-                        className={`${bg} px-3 py-1 rounded-full`}
-                        onPress={() => onSelectCategory?.(category)}
-                        activeOpacity={onSelectCategory ? 0.8 : 1}
+                    <LinearGradient
+                        key={index}
+                        colors={colors}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={{
+                            borderRadius: 999,
+                            paddingVertical: 6,
+                            paddingHorizontal: 14,
+                        }}
                     >
-                        <Text className={`${text} text-xs font-medium`}>{category}</Text>
-                    </TouchableOpacity>
+                        <Text style={{ color: textColor, fontWeight: "600", fontSize: 13 }}>{tag}</Text>
+                    </LinearGradient>
                 );
             })}
         </View>
     );
-};
-
-export default CategoryTags;
+}
