@@ -1,10 +1,12 @@
 import OrderForm from "@/app/boutique/order-form";
 import BackButton from "@/components/common/BackButton";
-import { fetchBoutiqueDetails } from "@/services/api";
-import { Ionicons } from "@expo/vector-icons";
+import { fetchBoutiqueDetails, fetchBoutiqueCatalogue } from "@/services/api";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import DressTypeGallery from "@/components/boutique/DressTypeGallery";
+import CatalogueModal, { CatalogueItem } from "@/components/boutique/CatalogueModal";
+import { Boutique } from "@/services/api";
 import {
     ActivityIndicator,
     Animated,
@@ -19,17 +21,6 @@ import {
 } from "react-native";
 import ImageViewing from "react-native-image-viewing";
 
-type Boutique = {
-    _id: string;
-    name: string;
-    area: string;
-    averageRating: number;
-    headerImage?: string[] | string;
-    description?: string;
-    gallery?: string[];
-    dressTypes?: { type: string }[];
-};
-
 const SCREEN_HEIGHT = Dimensions.get("window").height;
 
 export default function BoutiqueDetails() {
@@ -37,13 +28,17 @@ export default function BoutiqueDetails() {
     const [visible, setVisible] = useState(false);
     const [currentIndex, setCurrentIndex] = useState(0);
     const slideAnim = useRef(new Animated.Value(0)).current;
+    const catalogueAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
     const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
+    const [isCatalogueOpen, setIsCatalogueOpen] = useState(false);
+    const [catalogueItems, setCatalogueItems] = useState<CatalogueItem[]>([]);
     const [boutique, setBoutique] = useState<Boutique | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
     useEffect(() => {
         if (id) fetchBoutique();
+        catalogueAnim.setValue(SCREEN_HEIGHT);
     }, [id]);
 
     const fetchBoutique = async () => {
@@ -52,6 +47,8 @@ export default function BoutiqueDetails() {
         try {
             const data = await fetchBoutiqueDetails(id as string);
             setBoutique(data);
+            const catalogueRes = await fetchBoutiqueCatalogue(id as string);
+            setCatalogueItems(catalogueRes.catalogue || []);
         } catch (err) {
             setError("Failed to load boutique details.");
         } finally {
@@ -78,10 +75,22 @@ export default function BoutiqueDetails() {
         }
     };
 
+    const openCatalogue = () => {
+        setIsCatalogueOpen(true);
+    };
+
+
+    const closeCatalogue = () => {
+        setIsCatalogueOpen(false);
+    };
+
+
     const translateY = slideAnim.interpolate({
         inputRange: [0, 1],
         outputRange: [SCREEN_HEIGHT, 0],
     });
+
+    const catalogueTranslateY = catalogueAnim;
 
     if (loading) {
         return (
@@ -99,7 +108,6 @@ export default function BoutiqueDetails() {
         );
     }
 
-    // Format headerImage URL safely
     const headerImage =
         Array.isArray(boutique.headerImage) && boutique.headerImage.length > 0
             ? boutique.headerImage[0]
@@ -117,7 +125,7 @@ export default function BoutiqueDetails() {
     const galleryImages = [
         { uri: bannerImageUri },
         ...(boutique.gallery || [])
-            .filter((uri): uri is string => typeof uri === "string" && uri.trim().length > 0)
+            .filter((uri) => typeof uri === "string" && uri.trim().length > 0)
             .map((uri) => ({
                 uri: uri.startsWith("http") ? uri : `https://needles-v1.onrender.com${uri}`,
             })),
@@ -137,7 +145,6 @@ export default function BoutiqueDetails() {
                 />
 
                 <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-                    {/* Premium Header Banner */}
                     <View className="relative">
                         <TouchableOpacity onPress={() => { setCurrentIndex(0); setVisible(true); }}>
                             <ImageBackground
@@ -146,19 +153,15 @@ export default function BoutiqueDetails() {
                                 imageStyle={{ borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }}
                                 resizeMode="cover"
                             >
-                                {/* Gradient overlay for better text visibility */}
                                 <View className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/60 to-transparent rounded-b-3xl" />
                             </ImageBackground>
                         </TouchableOpacity>
 
-                        {/* Reusable Back Button Component */}
                         <BackButton />
                     </View>
 
-                    {/* Premium Content Container */}
                     <View className="bg-white mx-4 -mt-10 rounded-t-[32px] shadow-2xl z-10 pb-40">
                         <View className="px-5 pt-10 space-y-8">
-                        {/* Boutique Name & Rating */}
                             <View className="mb-6">
                                 <View className="flex-row justify-between items-start mb-3">
                                     <View className="flex-1">
@@ -181,8 +184,6 @@ export default function BoutiqueDetails() {
                                             </Text>
                                         </View>
                                     </View>
-
-                                    {/* Premium location badge */}
                                     <View className="bg-gradient-to-r from-orange-100 to-red-100 px-4 py-2 rounded-full border border-orange-200">
                                         <View className="flex-row items-center">
                                             <Ionicons name="location" size={14} color="#EA580C" />
@@ -194,22 +195,30 @@ export default function BoutiqueDetails() {
                                 </View>
                             </View>
 
-                            {/* Divider */}
                             <View className="h-px bg-gray-200 mb-6" />
 
-                            {/* Category Tags with premium styling */}
                             <View className="mb-8">
                                 <Text className="text-lg font-bold text-gray-900 mb-4">Our Work</Text>
                                 {boutique.dressTypes && boutique.dressTypes.length > 0 && (
                                     <DressTypeGallery dressTypes={boutique.dressTypes} />
                                 )}
                             </View>
-
                         </View>
                     </View>
                 </ScrollView>
 
-                {/* Premium Order Button */}
+                <TouchableOpacity
+                    onPress={openCatalogue}
+                    className="absolute bottom-32 right-4 w-24 h-24 bg-black rounded-full shadow-lg items-center justify-center z-10"
+                >
+                    <View className="items-center justify-center">
+                        <MaterialIcons name="menu-book" size={34} color="#FFFFFF" />
+                        <Text className="text-[11px] text-white mt-0.1">CATALOGUE</Text>
+                    </View>
+                </TouchableOpacity>
+
+
+
                 <TouchableOpacity
                     className={`absolute bottom-6 left-4 right-4 shadow-2xl z-10 ${isOrderFormOpen ? "opacity-0" : ""}`}
                     onPress={toggleOrderForm}
@@ -224,7 +233,6 @@ export default function BoutiqueDetails() {
                     </View>
                 </TouchableOpacity>
 
-                {/* Animated Order Form */}
                 {isOrderFormOpen && (
                     <Animated.View
                         className="absolute left-0 right-0 bg-white z-20 rounded-t-3xl shadow-2xl overflow-hidden"
@@ -236,6 +244,12 @@ export default function BoutiqueDetails() {
                         />
                     </Animated.View>
                 )}
+
+                <CatalogueModal
+                    visible={isCatalogueOpen}
+                    onClose={closeCatalogue}
+                    catalogueItems={catalogueItems}
+                />
             </View>
         </KeyboardAvoidingView>
     );
