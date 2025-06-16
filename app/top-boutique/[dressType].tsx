@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { fetchTopBoutiquesForDressType } from '@/services/api';
 import BoutiqueCard from '@/components/boutique/BoutiqueCard';
+import BackButton from '@/components/common/BackButton';
 
 type Boutique = {
     _id: string;
@@ -24,21 +25,21 @@ export default function TopBoutiquesForType() {
         const loadBoutiques = async () => {
             try {
                 if (!dressType) {
-                    console.warn("⚠️ No dressType found in route params");
+                    console.warn('⚠️ No dressType found in route params');
                     return;
                 }
 
-                console.log("📍 Screen opened for dress type:", dressType);
+                console.log('📍 Screen opened for dress type:', dressType);
                 setLoading(true);
 
                 const data = await fetchTopBoutiquesForDressType(dressType as string);
-                console.log("🎯 Received boutiques:", data.boutiques);
+                console.log('🎯 Received boutiques:', data.boutiques);
 
                 setBoutiques(data.boutiques || []);
                 setError(null);
             } catch (err: any) {
-                console.error("❌ Error fetching boutiques:", err);
-                setError(err?.response?.data?.message || "Failed to load boutiques.");
+                console.error('❌ Error fetching boutiques:', err);
+                setError(err?.response?.data?.message || 'Failed to load boutiques.');
             } finally {
                 setLoading(false);
             }
@@ -66,6 +67,10 @@ export default function TopBoutiquesForType() {
     return (
         <SafeAreaView className="flex-1 bg-light-100">
             <ScrollView className="px-4 pt-4">
+                <View className="px-4 pt-4">
+                    <BackButton />
+                </View>
+
                 <Text className="text-2xl font-bold mb-4 capitalize">
                     Top Boutiques for “{dressType}”
                 </Text>
