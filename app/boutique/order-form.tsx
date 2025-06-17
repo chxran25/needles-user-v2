@@ -14,6 +14,7 @@ import { useToast } from "react-native-toast-notifications";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { placeOrder, fetchBoutiqueDetails } from "@/services/api";
 import { Ionicons } from "@expo/vector-icons";
+import VoiceRecorder from "@/components/common/VoiceRecorder";
 
 interface OrderFormProps {
     boutiqueId: string;
@@ -26,16 +27,17 @@ export default function OrderForm({ boutiqueId, userAddress, onClose }: OrderFor
 
     const [userId, setUserId] = useState("");
     const [screen, setScreen] = useState<"design" | "measurements">("design");
+
     const [dressTypes, setDressTypes] = useState<string[]>([]);
     const [dressType, setDressType] = useState("");
     const [showDropdown, setShowDropdown] = useState(false);
 
     const [referralImage, setReferralImage] = useState<any>(null);
-    const [instructions, setInstructions] = useState("");
-
-    const [pickUp, setPickUp] = useState(false);
     const [measurements, setMeasurements] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(false);
+    const [pickUp, setPickUp] = useState(false);
+
+    const [voiceNotes, setVoiceNotes] = useState<string[]>([]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -79,59 +81,70 @@ export default function OrderForm({ boutiqueId, userAddress, onClose }: OrderFor
             return;
         }
 
-        if (!pickUp) {
-            const required = ["Chest", "Waist", "Length"];
-            for (let field of required) {
-                if (!measurements[field]) {
-                    toast.show(`Please enter ${field} measurement`, { type: "danger" });
-                    return;
-                }
-            }
-        }
-
         try {
             setLoading(true);
-            const response = await placeOrder({
-                userId,
-                boutiqueId,
-                dressType,
-                pickUp,
-                location: userAddress,
-                measurements: pickUp ? undefined : measurements,
-                referralImage,
-                voiceNotes: [],
+
+            const formData = new FormData();
+            formData.append("userId", userId);
+            formData.append("boutiqueId", boutiqueId);
+            formData.append("dressType", dressType);
+            formData.append("pickUp", String(pickUp));
+            formData.append("location", userAddress);
+
+            if (!pickUp) {
+                const normalized = {
+                    chest: measurements["Chest"],
+                    waist: measurements["Waist"],
+                    length: measurements["Length"],
+                };
+                formData.append("measurements", JSON.stringify(normalized));
+            }
+
+            formData.append("referralImage", {
+                uri: referralImage.uri,
+                name: "referral.jpg",
+                type: "image/jpeg",
+            } as any);
+
+            voiceNotes.forEach((uri, index) => {
+                formData.append("voiceNotes", {
+                    uri,
+                    name: `voice-note-${index + 1}.m4a`,
+                    type: "audio/m4a",
+                } as any);
             });
+
+            const response = await placeOrder(formData);
             toast.show(response.message, { type: "success" });
             onClose();
         } catch (error: any) {
             console.error("❌ Order Placement Error:", error?.response || error);
-            toast.show(
-                error?.response?.data?.message || "Order failed",
-                { type: "danger" }
-            );
+            toast.show(error?.response?.data?.message || "Order failed", {
+                type: "danger",
+            });
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-[#F4F1E9] px-8">
+        <SafeAreaView className="flex-1 bg-[#F4F1E9] px-6">
             {screen === "design" ? (
-                <ScrollView showsVerticalScrollIndicator={false} className="pb-10">
-                    <Text className="text-5xl font-extrabold text-center mb-10 mt-6">Design</Text>
+                <ScrollView showsVerticalScrollIndicator={false}>
+                    <Text className="text-3xl font-bold text-center mb-6 mt-4">Design</Text>
 
-                    <Text className="text-2xl font-semibold mb-2">Dress Type</Text>
-                    <Text className="text-base text-gray-600 mb-4">
+                    <Text className="text-xl font-bold mb-1">Dress Type</Text>
+                    <Text className="text-sm text-gray-600 mb-2">
                         Select the type of outfit you want to order from the available options.
                     </Text>
                     <TouchableOpacity
                         onPress={() => setShowDropdown(true)}
-                        className="bg-white border border-gray-300 rounded-xl px-5 py-4 flex-row justify-between items-center mb-8"
+                        className="bg-white border border-gray-300 rounded-xl px-4 py-3 flex-row justify-between items-center mb-6"
                     >
-                        <Text className={`text-lg ${dressType ? "text-gray-900" : "text-gray-400"}`}>
+                        <Text className={`text-base ${dressType ? "text-gray-900" : "text-gray-400"}`}>
                             {dressType || "Choose dress type"}
                         </Text>
-                        <Ionicons name="chevron-down" size={24} color="#666" />
+                        <Ionicons name="chevron-down" size={20} color="#666" />
                     </TouchableOpacity>
 
                     <Modal visible={showDropdown} transparent animationType="fade">
@@ -140,8 +153,8 @@ export default function OrderForm({ boutiqueId, userAddress, onClose }: OrderFor
                             className="flex-1 bg-black/30 justify-center items-center"
                             activeOpacity={1}
                         >
-                            <View className="bg-white rounded-3xl w-80 max-h-[60%] py-6 px-4 shadow-xl">
-                                <Text className="text-xl font-bold text-center mb-4">Select Dress Type</Text>
+                            <View className="bg-white rounded-2xl w-80 max-h-[60%] py-4 px-2 shadow-lg">
+                                <Text className="text-lg font-semibold text-center mb-2">Select Dress Type</Text>
                                 <ScrollView showsVerticalScrollIndicator={false}>
                                     {dressTypes.map((type) => (
                                         <TouchableOpacity
@@ -152,7 +165,7 @@ export default function OrderForm({ boutiqueId, userAddress, onClose }: OrderFor
                                             }}
                                             className="px-6 py-4 border-b border-gray-100"
                                         >
-                                            <Text className="text-lg text-gray-800">{type}</Text>
+                                            <Text className="text-gray-800 text-base">{type}</Text>
                                         </TouchableOpacity>
                                     ))}
                                 </ScrollView>
@@ -160,87 +173,89 @@ export default function OrderForm({ boutiqueId, userAddress, onClose }: OrderFor
                         </TouchableOpacity>
                     </Modal>
 
-                    <Text className="text-2xl font-semibold mb-2">Upload a Reference Image</Text>
-                    <Text className="text-base text-gray-600 mb-4">
+                    <Text className="text-xl font-bold mb-1">Upload a Reference Image</Text>
+                    <Text className="text-sm text-gray-600 mb-2">
                         Upload a design or photo to guide the boutique in crafting your custom outfit.
                     </Text>
-                    <TouchableOpacity onPress={handleImagePick} className="mb-8">
+                    <TouchableOpacity onPress={handleImagePick} className="mb-6">
                         {referralImage ? (
-                            <Image source={{ uri: referralImage.uri }} className="w-full aspect-[3/2] rounded-xl" />
+                            <Image
+                                source={{ uri: referralImage.uri }}
+                                className="w-full aspect-[3/2] rounded-xl"
+                            />
                         ) : (
-                            <View className="border border-dashed border-gray-400 h-40 rounded-xl justify-center items-center">
-                                <Text className="text-gray-500 text-lg">Tap to upload image</Text>
+                            <View className="border border-dashed border-gray-400 h-32 rounded-xl justify-center items-center">
+                                <Text className="text-gray-500">Tap to upload image</Text>
                             </View>
                         )}
                     </TouchableOpacity>
 
-                    <Text className="text-2xl font-semibold mb-2">Voice Notes</Text>
-                    <Text className="text-base text-gray-600 mb-6">
-                        Speak your design preferences for more clarity.
+                    <Text className="text-xl font-bold mb-1">Voice Notes</Text>
+                    <Text className="text-sm text-gray-600 mb-2">
+                        Speak your design preferences for more clarity. You can add up to 5 recordings.
                     </Text>
-                    <TouchableOpacity
-                        className="w-16 h-16 bg-white rounded-full shadow-md items-center justify-center mx-auto mb-10"
-                        onPress={() => toast.show("Voice note not implemented yet", { type: "warning" })}
-                    >
-                        <Ionicons name="mic" size={28} color="black" />
-                    </TouchableOpacity>
+
+                    <VoiceRecorder onRecordingComplete={(uris) => setVoiceNotes(uris)} />
 
                     <TouchableOpacity
                         onPress={() => setScreen("measurements")}
-                        className="bg-black py-5 rounded-full items-center"
+                        className="bg-black py-4 rounded-full items-center"
                         disabled={!dressType}
                     >
-                        <Text className="text-white font-bold text-lg">Next</Text>
+                        <Text className="text-white font-bold text-base">Next</Text>
                     </TouchableOpacity>
                 </ScrollView>
             ) : (
-                <ScrollView showsVerticalScrollIndicator={false} className="pb-10">
-                    <Text className="text-5xl font-extrabold text-center mb-10 mt-6">Measurements</Text>
+                <ScrollView showsVerticalScrollIndicator={false}>
+                    <Text className="text-3xl font-bold text-center mb-6 mt-4">Measurements</Text>
 
                     {!pickUp && (
                         <>
-                            <Text className="text-2xl font-semibold mb-2">Enter Your Measurements</Text>
-                            <Text className="text-base text-gray-600 mb-4">
-                                Please enter the size measurements in inches to ensure a perfect fit.
+                            <Text className="text-lg font-bold mb-1">Type your measurements</Text>
+                            <Text className="text-sm text-gray-600 mb-2">
+                                Please enter your measurements in inches for accurate fitting.
                             </Text>
                             {["Chest", "Waist", "Length"].map((key) => (
                                 <TextInput
                                     key={key}
                                     placeholder={`${key} (in inches)`}
-                                    className="border border-gray-300 rounded-xl px-4 py-3 mb-4 text-gray-900 bg-white text-base"
+                                    className="border border-gray-300 rounded-lg px-3 py-2 mb-3 text-gray-900 bg-white"
                                     value={measurements[key] || ""}
-                                    onChangeText={(val) => setMeasurements((prev) => ({ ...prev, [key]: val }))}
+                                    onChangeText={(val) =>
+                                        setMeasurements((prev) => ({ ...prev, [key]: val }))
+                                    }
                                 />
                             ))}
                         </>
                     )}
 
-                    <View className="my-8">
-                        <Text className="text-center font-bold mb-4 text-xl">OR</Text>
-                        <Text className="text-base text-gray-700 text-center mb-6 px-2">
+                    <View className="my-6">
+                        <Text className="text-center font-bold mb-2">OR</Text>
+                        <Text className="text-sm text-gray-700 text-center mb-4">
                             We’ll pick up a reference dress from your address to take your measurements.
-                            The ordered product and the reference will be returned upon delivery.
+                            The ordered product and the reference will be returned on delivery.
                         </Text>
+
                         <TouchableOpacity
                             onPress={() => setPickUp(true)}
-                            className="bg-gray-800 py-4 rounded-full items-center"
+                            className="bg-gray-800 py-3 rounded-full items-center"
                         >
-                            <Text className="text-white font-semibold text-base">Pick Up</Text>
+                            <Text className="text-white font-semibold">Pick Up</Text>
                         </TouchableOpacity>
                     </View>
 
                     <TouchableOpacity
                         onPress={handlePlaceOrder}
                         disabled={loading}
-                        className="bg-black py-5 rounded-full items-center mb-6"
+                        className="bg-black py-4 rounded-full items-center mb-4"
                     >
-                        <Text className="text-white font-bold text-lg">
+                        <Text className="text-white font-bold text-base">
                             {loading ? "Placing Order..." : "Place Order"}
                         </Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity onPress={onClose} className="items-center">
-                        <Text className="text-gray-500 underline text-base">Cancel</Text>
+                        <Text className="text-gray-500 underline">Cancel</Text>
                     </TouchableOpacity>
                 </ScrollView>
             )}
