@@ -1,10 +1,10 @@
-import { useLocalSearchParams } from 'expo-router';
-import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
-import { useEffect, useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useEffect, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import { fetchTopBoutiquesForDressType } from '@/services/api';
 import BoutiqueCard from '@/components/boutique/BoutiqueCard';
-import BackButton from '@/components/common/BackButton';
 
 type Boutique = {
     _id: string;
@@ -20,6 +20,7 @@ export default function TopBoutiquesForType() {
     const [loading, setLoading] = useState(true);
     const [boutiques, setBoutiques] = useState<Boutique[]>([]);
     const [error, setError] = useState<string | null>(null);
+    const router = useRouter();
 
     useEffect(() => {
         const loadBoutiques = async () => {
@@ -65,12 +66,16 @@ export default function TopBoutiquesForType() {
     }
 
     return (
-        <SafeAreaView className="flex-1 bg-light-100">
-            <ScrollView className="px-4 pt-4">
-                <View className="px-4 pt-4">
-                    <BackButton />
-                </View>
+        <SafeAreaView className="flex-1 bg-light-100 relative">
+            {/* Inline Back Button */}
+            <TouchableOpacity
+                onPress={() => router.replace('/')}
+                className="absolute top-14 left-4 z-50 bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg"
+            >
+                <Ionicons name="arrow-back" size={20} color="black" />
+            </TouchableOpacity>
 
+            <ScrollView className="px-4 pt-14">
                 <Text className="text-2xl font-bold mb-4 capitalize">
                     Top Boutiques for “{dressType}”
                 </Text>
@@ -86,14 +91,22 @@ export default function TopBoutiquesForType() {
                                 typeof boutique.headerImage === 'string' &&
                                 boutique.headerImage.startsWith('http')
                                     ? boutique.headerImage
-                                    : `https://needles-v1.onrender.com${boutique.headerImage}`;
+                                    : boutique.headerImage
+                                        ? `https://needles-v1.onrender.com${boutique.headerImage}`
+                                        : undefined;
+
+                            const uniqueTags = Array.from(
+                                new Map(
+                                    boutique.dressTypes.map((d) => [d.type.toLowerCase().trim(), d.type])
+                                ).values()
+                            );
 
                             return (
                                 <BoutiqueCard
                                     key={boutique._id}
                                     id={boutique._id}
                                     name={boutique.name}
-                                    tags={boutique.dressTypes.map((d) => d.type)}
+                                    tags={uniqueTags}
                                     location={boutique.area}
                                     image={image}
                                     rating={boutique.averageRating}

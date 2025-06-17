@@ -1,7 +1,6 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
-
 // ✅ Setup Axios instance
 const api = axios.create({
     baseURL: 'https://needles-v1.onrender.com',
@@ -118,5 +117,52 @@ export const fetchBoutiqueDetails = async (id: string): Promise<Boutique> => {
 
 export const fetchBoutiqueCatalogue = async (boutiqueId: string): Promise<{ boutiqueName: string; catalogue: CatalogueItem[] }> => {
     const response = await api.get(`/User/${boutiqueId}/catalogue`);
+    return response.data;
+};
+
+export const placeOrder = async (orderData: {
+    userId: string;
+    boutiqueId: string;
+    dressType: string;
+    pickUp: boolean;
+    measurements?: Record<string, any>;
+    location: string;
+    referralImage: any;
+    voiceNotes?: any[];
+    catalogueItems?: { itemName: string; price: number }[];
+}) => {
+    const formData = new FormData();
+
+    formData.append('userId', orderData.userId);
+    formData.append('boutiqueId', orderData.boutiqueId);
+    formData.append('pickUp', String(orderData.pickUp));
+    formData.append('dressType', orderData.dressType);
+    formData.append('location', orderData.location);
+
+    if (orderData.measurements)
+        formData.append('measurements', JSON.stringify(orderData.measurements));
+
+    if (orderData.catalogueItems)
+        formData.append('catalogueItems', JSON.stringify(orderData.catalogueItems));
+
+    formData.append('referralImage', {
+        uri: orderData.referralImage.uri,
+        name: 'referral.jpg',
+        type: 'image/jpeg',
+    } as any);
+
+
+    if (Array.isArray(orderData.voiceNotes)) {
+        orderData.voiceNotes.slice(0, 5).forEach((note, idx) => {
+            formData.append('voiceNotes', {
+                uri: note.uri,
+                name: `voiceNote${idx}.m4a`,
+                type: 'audio/m4a',
+            } as any);
+
+        });
+    }
+
+    const response = await api.post('/User/order/place', formData);
     return response.data;
 };

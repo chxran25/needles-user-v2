@@ -78,7 +78,7 @@ export default function BoutiqueCard({
             <Text className="text-sm text-gray-600 font-medium mb-1">
               Known for:
             </Text>
-            <CategoryTags categories={tags} />
+            <CategoryTags categories={[...new Set(tags.map(tag => tag.trim().toLowerCase()))]} />
           </View>
         )}
 

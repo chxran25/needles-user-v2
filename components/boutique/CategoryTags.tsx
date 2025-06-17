@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import {View, Text, Pressable, ScrollView} from "react-native";
+import { View, Text, Pressable, ScrollView } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import { LinearGradient } from "expo-linear-gradient";
 
 type CategoryTagsProps = {
     categories: string[];
-    selected?: string; // ✅ optional — for interactive use
-    onSelect?: (type: string) => void; // ✅ optional — for interaction
+    selected?: string;
+    onSelect?: (type: string) => void;
 };
 
 type GradientPair = {
@@ -17,45 +17,57 @@ type GradientPair = {
 const STORAGE_KEY = "CATEGORY_GRADIENT_MAP";
 
 const GRADIENT_PALETTE: GradientPair[] = [
-    { colors: ["#f6d365", "#fda085"] as const, textColor: "#7c2d12" },
-    { colors: ["#a1c4fd", "#c2e9fb"] as const, textColor: "#1e3a8a" },
-    { colors: ["#fbc2eb", "#a6c1ee"] as const, textColor: "#4b0082" },
-    { colors: ["#84fab0", "#8fd3f4"] as const, textColor: "#065f46" },
-    { colors: ["#ffecd2", "#fcb69f"] as const, textColor: "#92400e" },
-    { colors: ["#c2e59c", "#64b3f4"] as const, textColor: "#1f2937" },
-    { colors: ["#fad0c4", "#ffd1ff"] as const, textColor: "#6b21a8" },
-    { colors: ["#e0c3fc", "#8ec5fc"] as const, textColor: "#3730a3" },
-    { colors: ["#d4fc79", "#96e6a1"] as const, textColor: "#365314" },
-    { colors: ["#fdfbfb", "#ebedee"] as const, textColor: "#374151" },
+    { colors: ["#f6d365", "#fda085"], textColor: "#7c2d12" },
+    { colors: ["#a1c4fd", "#c2e9fb"], textColor: "#1e3a8a" },
+    { colors: ["#fbc2eb", "#a6c1ee"], textColor: "#4b0082" },
+    { colors: ["#84fab0", "#8fd3f4"], textColor: "#065f46" },
+    { colors: ["#ffecd2", "#fcb69f"], textColor: "#92400e" },
+    { colors: ["#c2e59c", "#64b3f4"], textColor: "#1f2937" },
+    { colors: ["#fad0c4", "#ffd1ff"], textColor: "#6b21a8" },
+    { colors: ["#e0c3fc", "#8ec5fc"], textColor: "#3730a3" },
+    { colors: ["#d4fc79", "#96e6a1"], textColor: "#365314" },
+    { colors: ["#fdfbfb", "#ebedee"], textColor: "#374151" },
 ];
 
 export default function CategoryTags({ categories, selected, onSelect }: CategoryTagsProps) {
     const [colorMap, setColorMap] = useState<Record<string, GradientPair>>({});
     const initialized = useRef(false);
 
+    // ✅ Cleaned-up version of categories: trimmed, deduplicated
+    const uniqueCategories = Array.from(
+        new Map(
+            categories.map((cat) => [cat.toLowerCase().trim(), cat])
+        ).values()
+    );
+
     useEffect(() => {
         if (!initialized.current) {
             initialized.current = true;
-            assignAndStoreColors(categories);
+            assignAndStoreColors(uniqueCategories);
         }
-    }, [categories]);
+    }, [categories.join(",")]); // ensures refresh when categories change
 
     const assignAndStoreColors = async (categories: string[]) => {
         const stored = await SecureStore.getItemAsync(STORAGE_KEY);
         let existing: Record<string, GradientPair> = stored ? JSON.parse(stored) : {};
-        let updated = { ...existing };
+        let updated: Record<string, GradientPair> = {};
         let changed = false;
 
-        categories.forEach((cat) => {
-            const key = cat.toLowerCase().trim();
-            if (!updated[key]) {
+        const currentKeys = categories.map((cat) => cat.toLowerCase().trim());
+
+        currentKeys.forEach((key) => {
+            if (!existing[key]) {
                 const random = GRADIENT_PALETTE[Math.floor(Math.random() * GRADIENT_PALETTE.length)];
                 updated[key] = random;
                 changed = true;
+            } else {
+                updated[key] = existing[key];
             }
         });
 
-        if (changed) {
+        const hasDeletedKeys = Object.keys(existing).some(key => !currentKeys.includes(key));
+
+        if (changed || hasDeletedKeys) {
             await SecureStore.setItemAsync(STORAGE_KEY, JSON.stringify(updated));
         }
 
@@ -65,7 +77,7 @@ export default function CategoryTags({ categories, selected, onSelect }: Categor
     return (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-2">
             <View className="flex-row gap-2 px-1">
-                {categories.map((tag, index) => {
+                {uniqueCategories.map((tag, index) => {
                     const key = tag.toLowerCase().trim();
                     const { colors, textColor } = colorMap[key] || GRADIENT_PALETTE[0];
                     const isSelected = selected === tag;
@@ -93,5 +105,4 @@ export default function CategoryTags({ categories, selected, onSelect }: Categor
             </View>
         </ScrollView>
     );
-
 }

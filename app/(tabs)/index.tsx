@@ -17,27 +17,13 @@ import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { fetchRecommendedBoutiques, fetchRecommendedDressTypes } from '@/services/api';
 import BoutiqueCard from '@/components/boutique/BoutiqueCard';
 import RippleCircleOverlay from '@/components/RippleCircleOverlay';
+import type {Boutique, RecommendedDressType} from '@/types';
 
-type Boutique = {
-    _id: string;
-    name: string;
-    dressTypes: { type: string; images?: string[]; _id: string }[];
-    area: string;
-    headerImage?: string;
-    averageRating: number;
-};
-
-type DressType = {
-    label: string;
-    imageUrl?: string;
-    count?: number;
-    relevance?: number;
-};
 
 export default function HomeScreen() {
     const [search, setSearch] = useState('');
     const [recommendedBoutiques, setRecommendedBoutiques] = useState<Boutique[]>([]);
-    const [recommendedTypes, setRecommendedTypes] = useState<DressType[]>([]);
+    const [recommendedTypes, setRecommendedTypes] = useState<RecommendedDressType[]>([]);
     const [ripple, setRipple] = useState<{ x: number; y: number; label: string } | null>(null);
 
     const router = useRouter();
@@ -181,7 +167,7 @@ export default function HomeScreen() {
                                 <BoutiqueCard
                                     id={boutique._id}
                                     name={boutique.name}
-                                    tags={boutique.dressTypes.map(dt => dt.type)}
+                                    tags={boutique.dressTypes?.map(dt => dt.type) ?? []}
                                     location={boutique.area}
                                     image={finalImage}
                                     rating={boutique.averageRating}
