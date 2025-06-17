@@ -11,13 +11,11 @@ import { useEffect } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 
 export default function WaveformVisualizer() {
-    // Create 8 animated height values for a more detailed waveform
     const heights = Array.from({ length: 8 }, () => useSharedValue(0.2));
     const opacities = Array.from({ length: 8 }, () => useSharedValue(0.3));
 
     useEffect(() => {
         heights.forEach((height, i) => {
-            // Stagger the animations for a more organic feel
             const delay = i * 150;
             const duration = 400 + Math.random() * 300;
 
@@ -52,29 +50,27 @@ export default function WaveformVisualizer() {
         <View className="flex-row items-end justify-center gap-1.5 h-16 px-4">
             {heights.map((height, i) => {
                 const animatedStyle = useAnimatedStyle(() => {
-                    const barHeight = interpolate(
-                        height.value,
-                        [0, 1],
-                        [8, 48]
-                    );
-
+                    const barHeight = interpolate(height.value, [0, 1], [8, 48]);
                     return {
                         height: barHeight,
                         opacity: opacities[i].value,
-                        transform: [
-                            {
-                                scaleY: height.value,
-                            },
-                        ],
+                        transform: [{ scaleY: height.value }],
                     };
                 });
 
                 return (
                     <Animated.View
                         key={i}
-                        style={[animatedStyle]}
-                        className="w-1 bg-white rounded-full"
-                    />
+                        style={animatedStyle}
+                        className="w-1 rounded-full overflow-hidden"
+                    >
+                        <LinearGradient
+                            colors={["#2563EB", "#9333EA"]}
+                            start={{ x: 0, y: 1 }}
+                            end={{ x: 0, y: 0 }}
+                            className="flex-1 w-full rounded-full"
+                        />
+                    </Animated.View>
                 );
             })}
         </View>

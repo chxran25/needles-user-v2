@@ -1,11 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import {
-    Audio,
-    AVPlaybackStatus,
-    AVPlaybackStatusSuccess,
-} from "expo-av";
+import { Audio, AVPlaybackStatus, AVPlaybackStatusSuccess } from "expo-av";
 import WaveformVisualizer from "./WaveformVisualizer";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -21,6 +17,7 @@ export default function VoiceRecorder({ onRecordingComplete }: VoiceRecorderProp
     const [isPlaying, setIsPlaying] = useState<boolean[]>([]);
     const [recordingDuration, setRecordingDuration] = useState<number>(0);
     const [timerInterval, setTimerInterval] = useState<number | null>(null);
+    const [playbackProgress, setPlaybackProgress] = useState<number[]>([]); // ✅ new
 
     useEffect(() => {
         return () => {
@@ -43,9 +40,7 @@ export default function VoiceRecorder({ onRecordingComplete }: VoiceRecorderProp
             playsInSilentModeIOS: true,
         });
 
-        const { recording } = await Audio.Recording.createAsync(
-            Audio.RecordingOptionsPresets.HIGH_QUALITY
-        );
+        const { recording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
         setRecording(recording);
         setRecordingDuration(0);
 
@@ -67,10 +62,10 @@ export default function VoiceRecorder({ onRecordingComplete }: VoiceRecorderProp
         const uri = recording.getURI();
         if (uri) {
             const updated = [...recordings, uri];
-            const updatedDurations = [...durations, recordingDuration];
             setRecordings(updated);
-            setDurations(updatedDurations);
-            setIsPlaying((prev) => [...prev, false]);
+            setDurations([...durations, recordingDuration]);
+            setIsPlaying([...isPlaying, false]);
+            setPlaybackProgress([...playbackProgress, 0]); // ✅ track new recording
             onRecordingComplete(updated);
         }
 
@@ -97,12 +92,25 @@ export default function VoiceRecorder({ onRecordingComplete }: VoiceRecorderProp
 
             newSound.setOnPlaybackStatusUpdate((status: AVPlaybackStatus) => {
                 if (!status.isLoaded) return;
+                const s = status as AVPlaybackStatusSuccess;
 
-                const successStatus = status as AVPlaybackStatusSuccess;
-                if (successStatus.didJustFinish) {
+                if (s.didJustFinish) {
                     const updatedStates = [...isPlaying];
                     updatedStates[index] = false;
                     setIsPlaying(updatedStates);
+
+                    setPlaybackProgress((prev) => {
+                        const copy = [...prev];
+                        copy[index] = 1;
+                        return copy;
+                    });
+                } else {
+                    const progress = s.durationMillis ? s.positionMillis / s.durationMillis : 0;
+                    setPlaybackProgress((prev) => {
+                        const copy = [...prev];
+                        copy[index] = progress;
+                        return copy;
+                    });
                 }
             });
 
@@ -114,10 +122,12 @@ export default function VoiceRecorder({ onRecordingComplete }: VoiceRecorderProp
         const updatedRecordings = recordings.filter((_, i) => i !== index);
         const updatedDurations = durations.filter((_, i) => i !== index);
         const updatedPlaying = isPlaying.filter((_, i) => i !== index);
+        const updatedProgress = playbackProgress.filter((_, i) => i !== index);
 
         setRecordings(updatedRecordings);
         setDurations(updatedDurations);
         setIsPlaying(updatedPlaying);
+        setPlaybackProgress(updatedProgress);
         onRecordingComplete(updatedRecordings);
     };
 
@@ -154,7 +164,7 @@ export default function VoiceRecorder({ onRecordingComplete }: VoiceRecorderProp
                 {recording && (
                     <View className="items-center mt-4">
                         <WaveformVisualizer />
-                        <View className="bg-black/80 backdrop-blur-sm rounded-full px-4 py-2 mt-3">
+                        <View className="bg-black/80 rounded-full px-4 py-2 mt-3">
                             <Text className="text-white font-medium text-sm">
                                 Recording {formatDuration(recordingDuration)}
                             </Text>
@@ -179,7 +189,7 @@ export default function VoiceRecorder({ onRecordingComplete }: VoiceRecorderProp
                     {recordings.map((uri, index) => (
                         <View
                             key={index}
-                            className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-white/50"
+                            className="bg-white/80 rounded-2xl p-4 shadow-sm border border-white/50"
                         >
                             <View className="flex-row items-center justify-between">
                                 <View className="flex-row items-center flex-1">
@@ -214,14 +224,14 @@ export default function VoiceRecorder({ onRecordingComplete }: VoiceRecorderProp
                                 </TouchableOpacity>
                             </View>
 
-                            {/* Progress bar for playing state */}
+                            {/* Dynamic Progress Bar */}
                             {isPlaying[index] && (
                                 <View className="mt-3">
-                                    <View className="w-full h-1 bg-gray-200 rounded-full">
+                                    <View className="w-full h-1 bg-gray-200 rounded-full overflow-hidden">
                                         <LinearGradient
                                             colors={['#374151', '#1F2937']}
                                             className="h-full rounded-full"
-                                            style={{ width: '30%' }} // This would be dynamic in real implementation
+                                            style={{ width: `${(playbackProgress[index] || 0) * 100}%` }}
                                         />
                                     </View>
                                 </View>
