@@ -1,3 +1,4 @@
+// ✅ OrderForm.tsx
 import { useEffect, useState } from "react";
 import {
     View,
@@ -15,6 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { placeOrder, fetchBoutiqueDetails } from "@/services/api";
 import { Ionicons } from "@expo/vector-icons";
 import VoiceRecorder from "@/components/common/VoiceRecorder";
+import { LinearGradient } from "expo-linear-gradient"; // ✅ New import
 
 interface OrderFormProps {
     boutiqueId: string;
@@ -24,19 +26,15 @@ interface OrderFormProps {
 
 export default function OrderForm({ boutiqueId, userAddress, onClose }: OrderFormProps) {
     const toast = useToast();
-
     const [userId, setUserId] = useState("");
     const [screen, setScreen] = useState<"design" | "measurements">("design");
-
     const [dressTypes, setDressTypes] = useState<string[]>([]);
     const [dressType, setDressType] = useState("");
     const [showDropdown, setShowDropdown] = useState(false);
-
     const [referralImage, setReferralImage] = useState<any>(null);
     const [measurements, setMeasurements] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(false);
     const [pickUp, setPickUp] = useState(false);
-
     const [voiceNotes, setVoiceNotes] = useState<string[]>([]);
 
     useEffect(() => {
@@ -57,33 +55,20 @@ export default function OrderForm({ boutiqueId, userAddress, onClose }: OrderFor
     }, []);
 
     const handleImagePick = async () => {
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        });
+        const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images });
         if (!result.canceled && result.assets.length > 0) {
             setReferralImage(result.assets[0]);
         }
     };
 
     const handlePlaceOrder = async () => {
-        if (!userId) {
-            toast.show("User not identified. Please log in again.", { type: "danger" });
-            return;
-        }
-
-        if (!dressType) {
-            toast.show("Please select a dress type", { type: "danger" });
-            return;
-        }
-
-        if (!referralImage) {
-            toast.show("Referral image is required", { type: "danger" });
+        if (!userId || !dressType || !referralImage) {
+            toast.show("Please fill all required fields", { type: "danger" });
             return;
         }
 
         try {
             setLoading(true);
-
             const formData = new FormData();
             formData.append("userId", userId);
             formData.append("boutiqueId", boutiqueId);
@@ -118,147 +103,95 @@ export default function OrderForm({ boutiqueId, userAddress, onClose }: OrderFor
             toast.show(response.message, { type: "success" });
             onClose();
         } catch (error: any) {
-            console.error("❌ Order Placement Error:", error?.response || error);
-            toast.show(error?.response?.data?.message || "Order failed", {
-                type: "danger",
-            });
+            toast.show(error?.response?.data?.message || "Order failed", { type: "danger" });
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-[#F4F1E9] px-6">
-            {screen === "design" ? (
-                <ScrollView showsVerticalScrollIndicator={false}>
-                    <Text className="text-3xl font-bold text-center mb-6 mt-4">Design</Text>
+        <LinearGradient
+            colors={["#FF8C42", "#FFF5E1", "#FFFFFF"]}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            className="flex-1"
+        >
+            <SafeAreaView className="flex-1 px-6">
+                {screen === "design" ? (
+                    <ScrollView showsVerticalScrollIndicator={false}>
+                        <Text className="text-3xl font-bold text-center mb-6 mt-4">Design</Text>
 
-                    <Text className="text-xl font-bold mb-1">Dress Type</Text>
-                    <Text className="text-sm text-gray-600 mb-2">
-                        Select the type of outfit you want to order from the available options.
-                    </Text>
-                    <TouchableOpacity
-                        onPress={() => setShowDropdown(true)}
-                        className="bg-white border border-gray-300 rounded-xl px-4 py-3 flex-row justify-between items-center mb-6"
-                    >
-                        <Text className={`text-base ${dressType ? "text-gray-900" : "text-gray-400"}`}>
-                            {dressType || "Choose dress type"}
-                        </Text>
-                        <Ionicons name="chevron-down" size={20} color="#666" />
-                    </TouchableOpacity>
-
-                    <Modal visible={showDropdown} transparent animationType="fade">
-                        <TouchableOpacity
-                            onPress={() => setShowDropdown(false)}
-                            className="flex-1 bg-black/30 justify-center items-center"
-                            activeOpacity={1}
-                        >
-                            <View className="bg-white rounded-2xl w-80 max-h-[60%] py-4 px-2 shadow-lg">
-                                <Text className="text-lg font-semibold text-center mb-2">Select Dress Type</Text>
-                                <ScrollView showsVerticalScrollIndicator={false}>
-                                    {dressTypes.map((type) => (
-                                        <TouchableOpacity
-                                            key={type}
-                                            onPress={() => {
-                                                setDressType(type);
-                                                setShowDropdown(false);
-                                            }}
-                                            className="px-6 py-4 border-b border-gray-100"
-                                        >
-                                            <Text className="text-gray-800 text-base">{type}</Text>
-                                        </TouchableOpacity>
-                                    ))}
-                                </ScrollView>
-                            </View>
+                        <Text className="text-xl font-bold mb-1">Dress Type</Text>
+                        <Text className="text-sm text-gray-600 mb-2">Select your outfit type.</Text>
+                        <TouchableOpacity onPress={() => setShowDropdown(true)} className="bg-white border border-gray-300 rounded-xl px-4 py-3 flex-row justify-between items-center mb-6 shadow-sm shadow-black/5">
+                            <Text className={`text-base ${dressType ? "text-gray-900" : "text-gray-400"}`}>{dressType || "Choose dress type"}</Text>
+                            <Ionicons name="chevron-down" size={20} color="#666" />
                         </TouchableOpacity>
-                    </Modal>
 
-                    <Text className="text-xl font-bold mb-1">Upload a Reference Image</Text>
-                    <Text className="text-sm text-gray-600 mb-2">
-                        Upload a design or photo to guide the boutique in crafting your custom outfit.
-                    </Text>
-                    <TouchableOpacity onPress={handleImagePick} className="mb-6">
-                        {referralImage ? (
-                            <Image
-                                source={{ uri: referralImage.uri }}
-                                className="w-full aspect-[3/2] rounded-xl"
-                            />
-                        ) : (
-                            <View className="border border-dashed border-gray-400 h-32 rounded-xl justify-center items-center">
-                                <Text className="text-gray-500">Tap to upload image</Text>
-                            </View>
+                        <Modal visible={showDropdown} transparent animationType="fade">
+                            <TouchableOpacity onPress={() => setShowDropdown(false)} className="flex-1 bg-black/30 justify-center items-center" activeOpacity={1}>
+                                <View className="bg-white rounded-2xl w-80 max-h-[60%] py-4 px-2 shadow-lg">
+                                    <Text className="text-lg font-semibold text-center mb-2">Select Dress Type</Text>
+                                    <ScrollView showsVerticalScrollIndicator={false}>
+                                        {dressTypes.map((type) => (
+                                            <TouchableOpacity key={type} onPress={() => { setDressType(type); setShowDropdown(false); }} className="px-6 py-4 border-b border-gray-100">
+                                                <Text className="text-gray-800 text-base">{type}</Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </ScrollView>
+                                </View>
+                            </TouchableOpacity>
+                        </Modal>
+
+                        <Text className="text-xl font-bold mb-1">Upload a Reference Image</Text>
+                        <TouchableOpacity onPress={handleImagePick} className="mb-6">
+                            {referralImage ? (
+                                <Image source={{ uri: referralImage.uri }} className="w-full aspect-[3/2] rounded-xl shadow-md" />
+                            ) : (
+                                <View className="border border-dashed border-gray-400 h-32 rounded-xl justify-center items-center bg-white shadow-inner">
+                                    <Text className="text-gray-500">Tap to upload image</Text>
+                                </View>
+                            )}
+                        </TouchableOpacity>
+
+                        <Text className="text-xl font-bold mb-1">Voice Notes</Text>
+                        <Text className="text-sm text-gray-600 mb-2">Speak your preferences. Up to 5 recordings.</Text>
+                        <VoiceRecorder onRecordingComplete={(uris) => setVoiceNotes(uris)} />
+
+                        <TouchableOpacity onPress={() => setScreen("measurements")} className={`py-4 rounded-full items-center ${dressType ? "bg-black" : "bg-gray-400"}`} disabled={!dressType}>
+                            <Text className="text-white font-bold text-base">Next</Text>
+                        </TouchableOpacity>
+                    </ScrollView>
+                ) : (
+                    <ScrollView showsVerticalScrollIndicator={false}>
+                        <Text className="text-3xl font-bold text-center mb-6 mt-4">Measurements</Text>
+                        {!pickUp && (
+                            <>
+                                <Text className="text-lg font-bold mb-1">Enter your measurements</Text>
+                                {['Chest', 'Waist', 'Length'].map((key) => (
+                                    <TextInput key={key} placeholder={`${key} (in inches)`} className="border border-gray-300 rounded-lg px-3 py-2 mb-3 text-gray-900 bg-white" value={measurements[key] || ""} onChangeText={(val) => setMeasurements((prev) => ({ ...prev, [key]: val }))} />
+                                ))}
+                            </>
                         )}
-                    </TouchableOpacity>
 
-                    <Text className="text-xl font-bold mb-1">Voice Notes</Text>
-                    <Text className="text-sm text-gray-600 mb-2">
-                        Speak your design preferences for more clarity. You can add up to 5 recordings.
-                    </Text>
+                        <View className="my-6">
+                            <Text className="text-center font-bold mb-2">OR</Text>
+                            <Text className="text-sm text-gray-700 text-center mb-4">Pick up a reference dress for measurements.</Text>
+                            <TouchableOpacity onPress={() => setPickUp(true)} className="bg-gray-800 py-3 rounded-full items-center">
+                                <Text className="text-white font-semibold">Pick Up</Text>
+                            </TouchableOpacity>
+                        </View>
 
-                    <VoiceRecorder onRecordingComplete={(uris) => setVoiceNotes(uris)} />
-
-                    <TouchableOpacity
-                        onPress={() => setScreen("measurements")}
-                        className="bg-black py-4 rounded-full items-center"
-                        disabled={!dressType}
-                    >
-                        <Text className="text-white font-bold text-base">Next</Text>
-                    </TouchableOpacity>
-                </ScrollView>
-            ) : (
-                <ScrollView showsVerticalScrollIndicator={false}>
-                    <Text className="text-3xl font-bold text-center mb-6 mt-4">Measurements</Text>
-
-                    {!pickUp && (
-                        <>
-                            <Text className="text-lg font-bold mb-1">Type your measurements</Text>
-                            <Text className="text-sm text-gray-600 mb-2">
-                                Please enter your measurements in inches for accurate fitting.
-                            </Text>
-                            {["Chest", "Waist", "Length"].map((key) => (
-                                <TextInput
-                                    key={key}
-                                    placeholder={`${key} (in inches)`}
-                                    className="border border-gray-300 rounded-lg px-3 py-2 mb-3 text-gray-900 bg-white"
-                                    value={measurements[key] || ""}
-                                    onChangeText={(val) =>
-                                        setMeasurements((prev) => ({ ...prev, [key]: val }))
-                                    }
-                                />
-                            ))}
-                        </>
-                    )}
-
-                    <View className="my-6">
-                        <Text className="text-center font-bold mb-2">OR</Text>
-                        <Text className="text-sm text-gray-700 text-center mb-4">
-                            We’ll pick up a reference dress from your address to take your measurements.
-                            The ordered product and the reference will be returned on delivery.
-                        </Text>
-
-                        <TouchableOpacity
-                            onPress={() => setPickUp(true)}
-                            className="bg-gray-800 py-3 rounded-full items-center"
-                        >
-                            <Text className="text-white font-semibold">Pick Up</Text>
+                        <TouchableOpacity onPress={handlePlaceOrder} disabled={loading} className="bg-black py-4 rounded-full items-center mb-4">
+                            <Text className="text-white font-bold text-base">{loading ? "Placing Order..." : "Place Order"}</Text>
                         </TouchableOpacity>
-                    </View>
 
-                    <TouchableOpacity
-                        onPress={handlePlaceOrder}
-                        disabled={loading}
-                        className="bg-black py-4 rounded-full items-center mb-4"
-                    >
-                        <Text className="text-white font-bold text-base">
-                            {loading ? "Placing Order..." : "Place Order"}
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity onPress={onClose} className="items-center">
-                        <Text className="text-gray-500 underline">Cancel</Text>
-                    </TouchableOpacity>
-                </ScrollView>
-            )}
-        </SafeAreaView>
-    );
+                        <TouchableOpacity onPress={onClose} className="items-center">
+                            <Text className="text-gray-500 underline">Cancel</Text>
+                        </TouchableOpacity>
+                    </ScrollView>
+                )}
+            </SafeAreaView>
+        </LinearGradient>
+        );
 }

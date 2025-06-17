@@ -7,6 +7,7 @@ import {
     AVPlaybackStatusSuccess,
 } from "expo-av";
 import WaveformVisualizer from "./WaveformVisualizer";
+import { LinearGradient } from "expo-linear-gradient";
 
 type VoiceRecorderProps = {
     onRecordingComplete: (uris: string[]) => void;
@@ -20,7 +21,6 @@ export default function VoiceRecorder({ onRecordingComplete }: VoiceRecorderProp
     const [isPlaying, setIsPlaying] = useState<boolean[]>([]);
     const [recordingDuration, setRecordingDuration] = useState<number>(0);
     const [timerInterval, setTimerInterval] = useState<number | null>(null);
-
 
     useEffect(() => {
         return () => {
@@ -121,49 +121,111 @@ export default function VoiceRecorder({ onRecordingComplete }: VoiceRecorderProp
         onRecordingComplete(updatedRecordings);
     };
 
+    const formatDuration = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
     return (
-        <View className="items-center mb-6 w-full">
-            <TouchableOpacity
-                className="w-14 h-14 bg-white rounded-full shadow-md items-center justify-center"
-                onPress={recording ? stopRecording : startRecording}
-            >
-                <Ionicons name={recording ? "stop-circle" : "mic"} size={26} color="black" />
-            </TouchableOpacity>
+        <View className="items-center w-full">
+            {/* Record Button */}
+            <View className="items-center mb-6">
+                <TouchableOpacity
+                    className={`w-20 h-20 rounded-full items-center justify-center shadow-lg ${
+                        recording ? 'bg-red-500' : 'bg-white'
+                    }`}
+                    onPress={recording ? stopRecording : startRecording}
+                    style={{
+                        shadowColor: recording ? '#EF4444' : '#000',
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.3,
+                        shadowRadius: 8,
+                        elevation: 8,
+                    }}
+                >
+                    <Ionicons
+                        name={recording ? "stop" : "mic"}
+                        size={32}
+                        color={recording ? "white" : "#1F2937"}
+                    />
+                </TouchableOpacity>
 
-            {recording && (
-                <View className="items-center mt-3">
-                    <WaveformVisualizer />
-                    <Text className="text-gray-600 text-sm mt-1">
-                        Recording: {recordingDuration}s
+                {recording && (
+                    <View className="items-center mt-4">
+                        <WaveformVisualizer />
+                        <View className="bg-black/80 backdrop-blur-sm rounded-full px-4 py-2 mt-3">
+                            <Text className="text-white font-medium text-sm">
+                                Recording {formatDuration(recordingDuration)}
+                            </Text>
+                        </View>
+                    </View>
+                )}
+
+                {!recording && recordings.length < 5 && (
+                    <Text className="text-gray-500 text-sm mt-3 text-center">
+                        Tap to record • {5 - recordings.length} remaining
                     </Text>
-                </View>
-            )}
+                )}
+            </View>
 
+            {/* Recordings List */}
             {recordings.length > 0 && (
-                <View className="w-full mt-4 space-y-2">
+                <View className="w-full space-y-3">
+                    <Text className="text-gray-700 font-semibold mb-2">
+                        Recorded Notes ({recordings.length}/5)
+                    </Text>
+
                     {recordings.map((uri, index) => (
                         <View
                             key={index}
-                            className="flex-row items-center justify-between px-4 py-2 bg-gray-200 rounded-full"
+                            className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-white/50"
                         >
-                            <TouchableOpacity
-                                className="flex-row items-center"
-                                onPress={() => togglePlayback(index)}
-                            >
-                                <Ionicons
-                                    name={isPlaying[index] ? "pause" : "play"}
-                                    size={20}
-                                    color="black"
-                                />
-                                <Text className="ml-2">Voice Note {index + 1}</Text>
-                                <Text className="ml-2 text-xs text-gray-600">
-                                    ({durations[index]}s)
-                                </Text>
-                            </TouchableOpacity>
+                            <View className="flex-row items-center justify-between">
+                                <View className="flex-row items-center flex-1">
+                                    <TouchableOpacity
+                                        className={`w-12 h-12 rounded-full items-center justify-center mr-4 ${
+                                            isPlaying[index] ? 'bg-gray-900' : 'bg-gray-100'
+                                        }`}
+                                        onPress={() => togglePlayback(index)}
+                                    >
+                                        <Ionicons
+                                            name={isPlaying[index] ? "pause" : "play"}
+                                            size={18}
+                                            color={isPlaying[index] ? "white" : "#374151"}
+                                        />
+                                    </TouchableOpacity>
 
-                            <TouchableOpacity onPress={() => deleteRecording(index)}>
-                                <Ionicons name="close" size={18} color="black" />
-                            </TouchableOpacity>
+                                    <View className="flex-1">
+                                        <Text className="text-gray-900 font-semibold">
+                                            Voice Note {index + 1}
+                                        </Text>
+                                        <Text className="text-gray-500 text-sm">
+                                            Duration: {formatDuration(durations[index])}
+                                        </Text>
+                                    </View>
+                                </View>
+
+                                <TouchableOpacity
+                                    onPress={() => deleteRecording(index)}
+                                    className="w-10 h-10 rounded-full bg-red-50 items-center justify-center"
+                                >
+                                    <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                                </TouchableOpacity>
+                            </View>
+
+                            {/* Progress bar for playing state */}
+                            {isPlaying[index] && (
+                                <View className="mt-3">
+                                    <View className="w-full h-1 bg-gray-200 rounded-full">
+                                        <LinearGradient
+                                            colors={['#374151', '#1F2937']}
+                                            className="h-full rounded-full"
+                                            style={{ width: '30%' }} // This would be dynamic in real implementation
+                                        />
+                                    </View>
+                                </View>
+                            )}
                         </View>
                     ))}
                 </View>
