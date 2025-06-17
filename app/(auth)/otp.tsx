@@ -1,10 +1,18 @@
 import { useState } from "react";
-import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform } from "react-native";
+import {
+    View,
+    Text,
+    TextInput,
+    Pressable,
+    KeyboardAvoidingView,
+    Platform,
+} from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useToast } from "react-native-toast-notifications";
 import { verifyOtp } from "@/services/api";
 import { saveToken } from "@/utils/secureStore";
+import * as SecureStore from "expo-secure-store";
 
 export default function OtpScreen() {
     const router = useRouter();
@@ -18,7 +26,9 @@ export default function OtpScreen() {
         const phoneNumber = typeof phone === "string" ? phone : "";
 
         if (!phoneNumber) {
-            toast.show("Phone number is missing. Please retry login.", { type: "danger" });
+            toast.show("Phone number is missing. Please retry login.", {
+                type: "danger",
+            });
             router.replace("/login");
             return;
         }
@@ -34,17 +44,25 @@ export default function OtpScreen() {
 
             const response = await verifyOtp({ phone: phoneNumber, otp });
 
-            console.log("✅ OTP Verified!");
-            console.log("🔐 Access Token:", response.accessToken);
-            console.log("🔁 Refresh Token:", response.refreshToken);
+            console.log("✅ OTP Response:", response);
+
+            const userId = response?.user?._id;
+
+            if (!userId) {
+                toast.show("User ID not found in response", { type: "danger" });
+                return;
+            }
+
+            // ✅ Store token and userId
+            await saveToken("accessToken", response.accessToken);
+            await saveToken("refreshToken", response.refreshToken);
+            await SecureStore.setItemAsync("userId", userId);
+
+            const stored = await SecureStore.getItemAsync("userId");
+            console.log("🔐 Stored userId in SecureStore:", stored);
 
             toast.show("Verification successful!", { type: "success" });
 
-            // ✅ Save both tokens securely
-            await saveToken("accessToken", response.accessToken);
-            await saveToken("refreshToken", response.refreshToken);
-
-            // ✅ Navigate to Home screen
             router.replace("/");
         } catch (error: any) {
             console.log("❌ OTP Verification Error:", error);

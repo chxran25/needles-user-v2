@@ -203,18 +203,19 @@ export default function BoutiqueDetails() {
 
                 {/* 🛍️ Order Button */}
                 <TouchableOpacity
-                    className={`absolute bottom-6 left-4 right-4 shadow-2xl z-10 ${isOrderFormOpen ? "opacity-0" : ""}`}
                     onPress={toggleOrderForm}
-                    style={{ opacity: isOrderFormOpen ? 0 : 1 }}
+                    className="absolute bottom-16 left-6 right-6 z-10"
+                    style={{ display: isOrderFormOpen ? "none" : "flex" }}
                 >
-                    <View className="bg-gradient-to-r from-orange-500 to-red-500 py-4 px-6 rounded-2xl">
-                        <View className="flex-row justify-center items-center">
-                            <Ionicons name="bag-add" size={22} color="white" />
-                            <Text className="ml-2 text-white font-bold text-lg">Place Your Order</Text>
-                            <Ionicons name="chevron-up" size={20} color="white" className="ml-2" />
-                        </View>
+                    <View className="bg-black rounded-full py-4 px-6 shadow-lg flex-row justify-center items-center">
+                        <Ionicons name="bag-add" size={20} color="white" />
+                        <Text className="text-white font-semibold text-base ml-2">
+                            Place Your Order
+                        </Text>
                     </View>
                 </TouchableOpacity>
+
+
 
                 {/* 🎯 Order Form Slide Panel */}
                 {isOrderFormOpen && (
