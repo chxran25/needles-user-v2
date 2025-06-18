@@ -1,6 +1,10 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
+import { Boutique, CatalogueItem } from '@/types';
+import { Order } from '@/types/order';
+
+
 // ✅ Setup Axios instance
 const api = axios.create({
     baseURL: 'https://needles-v1.onrender.com',
@@ -24,23 +28,8 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// ✅ Type Definitions
-export type Boutique = {
-    _id: string;
-    name: string;
-    area: string;
-    averageRating: number;
-    headerImage?: string[] | string;
-    gallery?: string[];
-    dressTypes?: { type: string }[];
-};
-
-export type CatalogueItem = {
-    itemName: string;
-    price: number;
-};
-
 // ✅ API Methods
+
 export const userLogin = async ({ phone }: { phone: string }) => {
     const response = await api.post("/User/login", { phone });
     return response.data;
@@ -58,7 +47,12 @@ export const fetchRecommendedBoutiques = async (area = ''): Promise<Boutique[]> 
     return response.data.recommendedBoutiques;
 };
 
-export const fetchRecommendedDressTypes = async (): Promise<{ label: string; imageUrl?: string; count: number; relevance: number }[]> => {
+export const fetchRecommendedDressTypes = async (): Promise<{
+    label: string;
+    imageUrl?: string;
+    count?: number;
+    relevance?: number;
+}[]> => {
     const response = await api.get("/User/recommended");
     return response.data.dressTypes;
 };
@@ -115,7 +109,9 @@ export const fetchBoutiqueDetails = async (id: string): Promise<Boutique> => {
     }
 };
 
-export const fetchBoutiqueCatalogue = async (boutiqueId: string): Promise<{ boutiqueName: string; catalogue: CatalogueItem[] }> => {
+export const fetchBoutiqueCatalogue = async (
+    boutiqueId: string
+): Promise<{ boutiqueName: string; catalogue: CatalogueItem[] }> => {
     const response = await api.get(`/User/${boutiqueId}/catalogue`);
     return response.data;
 };
@@ -127,5 +123,62 @@ export const placeOrder = async (formData: FormData): Promise<any> => {
         },
     });
     return response.data;
+};
+
+// ✅ Corrected to fetch actual Not Paid orders
+export const fetchNotPaidOrders = async (): Promise<Order[]> => {
+    console.log("📡 Calling /User/order/Pending (Not Paid orders)");
+    const response = await api.get("/User/order/Pending");
+
+    const orders: Order[] = response.data.orders.map((o: any) => ({
+        id: o.orderId,
+        status: "Not Paid",
+        boutiqueName: o.boutiqueName,
+        imageUrl: o.referralImage,
+        dressType: o.dressType ?? "Custom Dress",
+        price: o.amount,
+        deliveryDate: o.deliveryDate ?? "N/A",
+    }));
+
+    console.log("✅ Not Paid Orders:", orders);
+    return orders;
+};
+
+
+export const fetchActualPendingOrders = async (): Promise<Order[]> => {
+    console.log("📡 Calling /User/order/OrderPending (Actual pending orders)");
+    const response = await api.get("/User/order/OrderPending");
+
+    const orders: Order[] = response.data.orders.map((o: any) => ({
+        id: o.orderId,
+        status: "Pending",
+        boutiqueName: o.boutiqueName,
+        imageUrl: o.referralImage,
+        dressType: o.dressType ?? "Custom Dress", // fallback
+        price: o.amount,
+        deliveryDate: o.deliveryDate ?? "N/A",
+    }));
+
+    console.log("✅ Actual Pending Orders:", orders);
+    return orders;
+};
+
+
+export const fetchPaidOrders = async (): Promise<Order[]> => {
+    console.log("📡 Calling /User/order/Paid");
+    const response = await api.get("/User/order/Paid");
+
+    const orders: Order[] = response.data.orders.map((o: any) => ({
+        id: o.orderId,
+        status: "Paid",
+        boutiqueName: o.boutiqueName,
+        imageUrl: o.referralImage,
+        dressType: o.dressType ?? "Custom Dress",
+        price: o.amount,
+        deliveryDate: o.deliveryDate ?? "N/A",
+    }));
+
+    console.log("✅ Paid Orders:", orders);
+    return orders;
 };
 

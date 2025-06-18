@@ -1,15 +1,44 @@
-// types/order.ts
+// Common base fields for all orders
+// type BaseOrder = {
+//     orderId: string;
+//     boutiqueName: string;
+//     referralImage?: string;
+// };
+//
+// // Main order tabs
+// export type PendingOrder = BaseOrder & {
+//     amount: number;
+//     status: "Pending" | "Not Paid" | "Paid";
+// };
+//
+// export type PaidOrder = BaseOrder & {
+//     amount: number;
+//     status: "Paid";
+//     items: {
+//         itemName: string;
+//         price: number;
+//     }[];
+// };
+//
+// // Alteration tab type
+// export type AlterationOrder = {
+//     orderId: string;
+//     boutiqueName: string;
+//     status: "Alteration";
+//     issueDescription: string;
+//     orderImage?: string;
+//     referenceImage?: string;
+//     voiceNoteUrl?: string;
+// };
 
-export type OrderStatus = "Pending" | "Shipped" | "Delivered" | "Cancelled";
+export type OrderStatus = ["Pending", "Paid", "Not Paid"];
 
-export type Order = {
+export interface Order {
     id: string;
-    boutiqueId: string;
-    type: string;
-    description: string;
-    ordered: string;
-    price: string;
     status: OrderStatus;
-    statusColor: string;
-    image?: string;
-};
+    boutiqueName: string;
+    imageUrl: string;
+    dressType: string;
+    price: number;
+    deliveryDate: string;
+}

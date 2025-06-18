@@ -1,9 +1,8 @@
-// app/types/index.ts
-
 export type DressType = {
     type: string;
     images?: string[];
     _id?: string;
+    measurementRequirements: string[];
 };
 
 export type RecommendedDressType = {
@@ -18,6 +17,12 @@ export type Boutique = {
     name: string;
     area: string;
     headerImage?: string | string[];
+    gallery?: string[];
     averageRating: number;
     dressTypes?: DressType[];
+};
+
+export type CatalogueItem = {
+    itemName: string;
+    price: number;
 };
