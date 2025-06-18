@@ -1,4 +1,3 @@
-// ✅ OrderForm.tsx
 import { useEffect, useState } from "react";
 import {
     View,
@@ -17,7 +16,8 @@ import { placeOrder, fetchBoutiqueDetails } from "@/services/api";
 import { Ionicons } from "@expo/vector-icons";
 import VoiceRecorder from "@/components/common/VoiceRecorder";
 import { LinearGradient } from "expo-linear-gradient";
-import BackButton from "@/components/common/BackButton"; // ✅ Ensure this import is correct
+import BackButton from "@/components/common/BackButton";
+import { DressType } from "@/types";
 
 interface OrderFormProps {
     boutiqueId: string;
@@ -29,8 +29,10 @@ export default function OrderForm({ boutiqueId, userAddress, onClose }: OrderFor
     const toast = useToast();
     const [userId, setUserId] = useState("");
     const [screen, setScreen] = useState<"design" | "measurements">("design");
-    const [dressTypes, setDressTypes] = useState<string[]>([]);
+    const [dressTypes, setDressTypes] = useState<DressType[]>([]);
+    const [availableTypes, setAvailableTypes] = useState<string[]>([]);
     const [dressType, setDressType] = useState("");
+    const [requiredFields, setRequiredFields] = useState<string[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [referralImage, setReferralImage] = useState<any>(null);
     const [measurements, setMeasurements] = useState<Record<string, string>>({});
@@ -46,14 +48,24 @@ export default function OrderForm({ boutiqueId, userAddress, onClose }: OrderFor
 
             try {
                 const boutique = await fetchBoutiqueDetails(boutiqueId);
-                const types = boutique.dressTypes?.map((d: { type: string }) => d.type) || [];
+                const types = boutique.dressTypes || [];
                 setDressTypes(types);
+                setAvailableTypes(types.map((d) => d.type));
             } catch {
                 toast.show("Failed to load boutique details", { type: "danger" });
             }
         };
         fetchData();
     }, []);
+
+    const handleDressTypeSelect = (selectedType: string) => {
+        setDressType(selectedType);
+        const selected = dressTypes.find((d) => d.type === selectedType);
+        if (selected?.measurementRequirements) {
+            setRequiredFields(selected.measurementRequirements);
+        }
+        setShowDropdown(false);
+    };
 
     const handleImagePick = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
@@ -80,11 +92,10 @@ export default function OrderForm({ boutiqueId, userAddress, onClose }: OrderFor
             formData.append("location", userAddress);
 
             if (!pickUp) {
-                const normalized = {
-                    chest: measurements["Chest"],
-                    waist: measurements["Waist"],
-                    length: measurements["Length"],
-                };
+                const normalized: Record<string, string> = {};
+                requiredFields.forEach((field) => {
+                    normalized[field] = measurements[field] || "";
+                });
                 formData.append("measurements", JSON.stringify(normalized));
             }
 
@@ -114,7 +125,7 @@ export default function OrderForm({ boutiqueId, userAddress, onClose }: OrderFor
 
     return (
         <SafeAreaView className="flex-1 bg-white relative">
-            {/* 🍊 Gradient BG */}
+            {/* Gradient Background */}
             <LinearGradient
                 colors={["#F97316", "#FFFFFF"]}
                 start={{ x: 0, y: 0 }}
@@ -133,20 +144,25 @@ export default function OrderForm({ boutiqueId, userAddress, onClose }: OrderFor
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 48 }}
             >
-
-                {/* Header Row with Back Button and Title */}
-                <View className="flex-row items-center justify-between mt-4 mb-3 px-1">
-                    <BackButton
-                        iconSize={24}
-                        iconColor="#111827"
-                        className="p-2 bg-white/80 rounded-full shadow-md"
-                        onPress={screen === "design" ? onClose : () => setScreen("design")}
-                    />
-                    <Text className="text-4xl font-extrabold text-gray-900 text-center flex-1 ml-[-24px]">
+                {/* Centered Header with Back Button */}
+                <View className="relative items-center justify-center mt-6 mb-3 px-1 z-10 h-10">
+                    <View className="absolute left-0">
+                        <BackButton
+                            iconSize={24}
+                            iconColor="#111827"
+                            className="p-2 bg-white/90 rounded-full shadow-md"
+                            onPress={() => {
+                                if (screen === "measurements") {
+                                    setScreen("design");
+                                } else {
+                                    onClose();
+                                }
+                            }}
+                        />
+                    </View>
+                    <Text className="text-3xl font-extrabold text-gray-900 text-center">
                         {screen === "design" ? "Design" : "Measurements"}
                     </Text>
-                    {/* Spacer for symmetry */}
-                    <View style={{ width: 40 }} />
                 </View>
 
                 {/* Progress Indicator */}
@@ -154,7 +170,6 @@ export default function OrderForm({ boutiqueId, userAddress, onClose }: OrderFor
                     <View className={`w-24 h-1.5 rounded-full ${screen === "design" ? "bg-black" : "bg-gray-300"}`} />
                     <View className={`w-24 h-1.5 rounded-full ${screen === "measurements" ? "bg-black" : "bg-gray-300"}`} />
                 </View>
-
 
                 {screen === "design" ? (
                     <>
@@ -183,13 +198,10 @@ export default function OrderForm({ boutiqueId, userAddress, onClose }: OrderFor
                                 <View className="bg-white rounded-2xl w-80 max-h-[60%] py-4 px-2 shadow-lg">
                                     <Text className="text-lg font-semibold text-center mb-2">Select Dress Type</Text>
                                     <ScrollView showsVerticalScrollIndicator={false}>
-                                        {dressTypes.map((type) => (
+                                        {availableTypes.map((type) => (
                                             <TouchableOpacity
                                                 key={type}
-                                                onPress={() => {
-                                                    setDressType(type);
-                                                    setShowDropdown(false);
-                                                }}
+                                                onPress={() => handleDressTypeSelect(type)}
                                                 className="px-6 py-4 border-b border-gray-100"
                                             >
                                                 <Text className="text-gray-800 text-base">{type}</Text>
@@ -221,7 +233,7 @@ export default function OrderForm({ boutiqueId, userAddress, onClose }: OrderFor
                             <VoiceRecorder onRecordingComplete={(uris) => setVoiceNotes(uris)} />
                         </View>
 
-                        {/* Next Button */}
+                        {/* Next */}
                         <TouchableOpacity
                             onPress={() => setScreen("measurements")}
                             disabled={!dressType}
@@ -239,23 +251,25 @@ export default function OrderForm({ boutiqueId, userAddress, onClose }: OrderFor
                     </>
                 ) : (
                     <>
-                        {/* Measurements Input */}
+                        {/* Measurements */}
                         {!pickUp && (
                             <View className="px-5 py-6 bg-white rounded-2xl shadow-md mb-6">
                                 <Text className="text-2xl font-semibold mb-4 text-gray-900">Enter your measurements</Text>
-                                {["Chest", "Waist", "Length"].map((key) => (
+                                {requiredFields.map((key) => (
                                     <TextInput
                                         key={key}
-                                        placeholder={`${key} (in inches)`}
+                                        placeholder={`${key.charAt(0).toUpperCase() + key.slice(1)} (in inches)`}
                                         className="border border-gray-300 rounded-lg px-4 py-3 mb-4 text-gray-900 bg-white text-base"
                                         value={measurements[key] || ""}
-                                        onChangeText={(val) => setMeasurements((prev) => ({ ...prev, [key]: val }))}
+                                        onChangeText={(val) =>
+                                            setMeasurements((prev) => ({ ...prev, [key]: val }))
+                                        }
                                     />
                                 ))}
                             </View>
                         )}
 
-                        {/* Pickup CTA */}
+                        {/* Pickup Option */}
                         <View className="my-8">
                             <Text className="text-center text-gray-700 text-base mb-2 font-semibold">
                                 Not sure about your measurements?
@@ -264,7 +278,6 @@ export default function OrderForm({ boutiqueId, userAddress, onClose }: OrderFor
                                 Let us pick up a reference dress from your home. We’ll take accurate measurements and return it safely.
                             </Text>
 
-                            {/* Recommended Tag */}
                             <View className="self-start mb-3">
                                 <View className="bg-indigo-100 px-4 py-1.5 rounded-full shadow-sm border border-indigo-300">
                                     <Text className="text-indigo-700 font-semibold text-sm">Recommended</Text>
@@ -283,7 +296,7 @@ export default function OrderForm({ boutiqueId, userAddress, onClose }: OrderFor
                             </TouchableOpacity>
                         </View>
 
-                        {/* Place Order Button */}
+                        {/* Place Order */}
                         <TouchableOpacity disabled={loading} onPress={handlePlaceOrder} className="rounded-full overflow-hidden mb-4">
                             <LinearGradient
                                 colors={["#2563EB", "#9333EA"]}
