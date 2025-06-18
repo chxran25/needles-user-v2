@@ -31,11 +31,12 @@
 //     voiceNoteUrl?: string;
 // };
 
-export type OrderStatus = ["Pending", "Paid", "Not Paid"];
+export type OrderStatus = "Pending" | "Paid" | "Not Paid";
 
 export interface Order {
     id: string;
     status: OrderStatus;
+    location?: string; // ✅ Add this line
     boutiqueName: string;
     imageUrl: string;
     dressType: string;

@@ -129,6 +129,8 @@ export const placeOrder = async (formData: FormData): Promise<any> => {
 export const fetchNotPaidOrders = async (): Promise<Order[]> => {
     console.log("📡 Calling /User/order/Pending (Not Paid orders)");
     const response = await api.get("/User/order/Pending");
+    console.log("🧾 Raw backend response:", response.data);
+
 
     const orders: Order[] = response.data.orders.map((o: any) => ({
         id: o.orderId,
@@ -182,3 +184,17 @@ export const fetchPaidOrders = async (): Promise<Order[]> => {
     return orders;
 };
 
+export const fetchBillDetails = async (orderId: string): Promise<any> => {
+    const response = await api.get(`/User/order/${orderId}/bill`);
+    return response.data.bill;
+};
+
+export const markBillAsPaid = async (orderId: string): Promise<any> => {
+    const response = await api.get(`/User/order/Pending/${orderId}/Bill/Pay`);
+    return response.data;
+};
+
+export const rejectBill = async (orderId: string): Promise<any> => {
+    const response = await api.get(`/User/order/Pending/${orderId}/Bill/Reject`);
+    return response.data;
+};

@@ -1,16 +1,18 @@
-import { View, Text, Pressable, RefreshControl, Dimensions } from "react-native";
-import { useEffect, useState } from "react";
-import { BlurView } from "expo-blur";
+import { View, Text, Pressable, RefreshControl, Dimensions, StatusBar } from "react-native";
+import { useEffect, useState, useCallback } from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useToast } from "react-native-toast-notifications";
 import Animated, {
     useSharedValue,
     useAnimatedScrollHandler,
     useAnimatedStyle,
     interpolate,
     Extrapolate,
+    withSpring,
+    runOnJS,
 } from "react-native-reanimated";
 import { FlatList } from "react-native-gesture-handler";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useToast } from "react-native-toast-notifications";
+import { LinearGradient } from "expo-linear-gradient";
 
 import {
     fetchActualPendingOrders,
@@ -22,70 +24,188 @@ import { Order } from "@/types/order";
 import OrderCard from "@/components/OrderCard";
 import SkeletonCard from "@/components/SkeletonCard";
 
-const SCREEN_WIDTH = Dimensions.get("window").width;
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const TABS = ["Pending", "Paid", "Not Paid"];
+const HEADER_HEIGHT = 200;
+const TAB_HEIGHT = 50;
 
 export default function OrdersScreen() {
     const [activeTab, setActiveTab] = useState("Pending");
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [headerVisible, setHeaderVisible] = useState(true);
     const toast = useToast();
 
     const scrollY = useSharedValue(0);
+    const tabIndicatorPosition = useSharedValue(0);
 
     const scrollHandler = useAnimatedScrollHandler({
         onScroll: (event) => {
             scrollY.value = event.contentOffset.y;
+
+            // Update header visibility
+            const shouldShowHeader = event.contentOffset.y < 50;
+            if (shouldShowHeader !== headerVisible) {
+                runOnJS(setHeaderVisible)(shouldShowHeader);
+            }
         },
     });
 
+    // Animated styles for header
     const headerAnimatedStyle = useAnimatedStyle(() => {
-        const translateY = interpolate(scrollY.value, [0, 100], [0, -10], Extrapolate.CLAMP);
-        const opacity = interpolate(scrollY.value, [0, 100], [1, 0], Extrapolate.CLAMP);
-        return { transform: [{ translateY }], opacity };
+        const translateY = interpolate(
+            scrollY.value,
+            [0, HEADER_HEIGHT],
+            [0, -HEADER_HEIGHT / 2],
+            Extrapolate.CLAMP
+        );
+        const opacity = interpolate(
+            scrollY.value,
+            [0, HEADER_HEIGHT / 2],
+            [1, 0],
+            Extrapolate.CLAMP
+        );
+        const scale = interpolate(
+            scrollY.value,
+            [0, HEADER_HEIGHT],
+            [1, 0.9],
+            Extrapolate.CLAMP
+        );
+
+        return {
+            transform: [{ translateY }, { scale }],
+            opacity,
+        };
     });
 
-    const fetchOrders = async () => {
+    // Animated style for sticky tabs
+    const stickyTabsStyle = useAnimatedStyle(() => {
+        const translateY = interpolate(
+            scrollY.value,
+            [HEADER_HEIGHT - TAB_HEIGHT, HEADER_HEIGHT],
+            [0, -TAB_HEIGHT],
+            Extrapolate.CLAMP
+        );
+
+        return {
+            transform: [{ translateY }],
+        };
+    });
+
+    // Tab indicator animation
+    const tabIndicatorStyle = useAnimatedStyle(() => {
+        return {
+            transform: [{ translateX: tabIndicatorPosition.value }],
+        };
+    });
+
+    const fetchOrders = useCallback(async () => {
         setIsLoading(true);
         try {
             let data: Order[] = [];
 
-            if (activeTab === "Pending") {
-                data = await fetchActualPendingOrders();
-            } else if (activeTab === "Paid") {
-                data = await fetchPaidOrders();
-            } else if (activeTab === "Not Paid") {
-                data = await fetchNotPaidOrders();
+            switch (activeTab) {
+                case "Pending":
+                    data = await fetchActualPendingOrders();
+                    break;
+                case "Paid":
+                    data = await fetchPaidOrders();
+                    break;
+                case "Not Paid":
+                    data = await fetchNotPaidOrders();
+                    break;
+                default:
+                    throw new Error("Invalid tab selected");
             }
 
-            if (!Array.isArray(data)) throw new Error("Invalid orders response");
+            if (!Array.isArray(data)) {
+                throw new Error("Invalid orders response format");
+            }
+
             setOrders(data);
         } catch (error) {
             console.error("❌ Failed to load orders:", error);
             setOrders([]);
-            toast.show("Failed to load orders", { type: "danger" });
+            toast.show("Failed to load orders. Please try again.", {
+                type: "danger",
+                duration: 4000,
+            });
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [activeTab, toast]);
 
     useEffect(() => {
         fetchOrders();
-    }, [activeTab]);
+    }, [fetchOrders]);
 
-    const handleRefresh = async () => {
+    const handleRefresh = useCallback(async () => {
         setIsRefreshing(true);
         await fetchOrders();
         setIsRefreshing(false);
-    };
+    }, [fetchOrders]);
+
+    const handleTabPress = useCallback((tab: string, index: number) => {
+        setActiveTab(tab);
+
+        // Animate tab indicator
+        const tabWidth = SCREEN_WIDTH / TABS.length;
+        tabIndicatorPosition.value = withSpring(index * tabWidth);
+    }, [tabIndicatorPosition]);
+
+    const renderOrderItem = useCallback(({ item, index }: { item: Order; index: number }) => (
+        <OrderCard
+            order={item}
+            type={activeTab.toLowerCase()}
+            index={index}
+        />
+    ), [activeTab]);
+
+    const renderEmptyComponent = useCallback(() => {
+        if (isLoading) {
+            return (
+                <View className="px-4 mt-4 space-y-4 bg-white">
+                    {Array.from({ length: 3 }, (_, i) => (
+                        <SkeletonCard key={`skeleton-${i}`} />
+                    ))}
+                </View>
+            );
+        }
+
+        return (
+            <View className="flex-1 items-center justify-center py-16 px-6 bg-white min-h-[400px]">
+                <Text className="text-6xl mb-4">🧵</Text>
+                <Text className="text-lg text-gray-800 mb-2 font-semibold text-center">
+                    No {activeTab.toLowerCase()} orders
+                </Text>
+                <Text className="text-sm text-gray-500 text-center leading-5">
+                    {activeTab === "Pending"
+                        ? "All your orders are up to date!"
+                        : `You don't have any ${activeTab.toLowerCase()} orders at the moment.`
+                    }
+                </Text>
+                <Pressable
+                    onPress={fetchOrders}
+                    className="mt-6 bg-orange-500 px-6 py-3 rounded-full"
+                >
+                    <Text className="text-white font-semibold">Refresh</Text>
+                </Pressable>
+            </View>
+        );
+    }, [isLoading, activeTab, fetchOrders]);
+
+    const keyExtractor = useCallback((item: Order, index: number): string =>
+        item.id?.toString() ?? `order-${index}`, []
+    );
 
     return (
-        <View className="flex-1 bg-black">
-            {/* 🔒 Sticky Header Outside FlatList */}
+        <View className="flex-1 bg-white">
+            <StatusBar barStyle="light-content" backgroundColor="#F97316" />
+
+            {/* Gradient Background Header */}
             <Animated.View
                 style={[
-                    headerAnimatedStyle,
                     {
                         position: "absolute",
                         top: 0,
@@ -93,93 +213,126 @@ export default function OrdersScreen() {
                         right: 0,
                         zIndex: 10,
                     },
+                    headerAnimatedStyle
                 ]}
             >
-                <BlurView
-                    intensity={40}
-                    tint="dark"
+                <LinearGradient
+                    colors={["#F97316", "#FB923C", "#FFFFFF"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
                     style={{
-                        width: SCREEN_WIDTH,
+                        height: HEADER_HEIGHT + 50, // Extra height for safe area
                         borderBottomLeftRadius: 24,
                         borderBottomRightRadius: 24,
-                        overflow: "hidden",
                     }}
                 >
-                    <View className="bg-black/70 px-4 pb-6 pt-12">
-                        <SafeAreaView edges={["top"]} className="bg-transparent">
-                            <Text className="text-3xl font-bold text-white tracking-tight mb-1">
+                    <SafeAreaView edges={["top"]} className="flex-1 px-4 pt-4">
+                        <View className="flex-1 justify-center">
+                            <Text className="text-3xl font-bold text-white tracking-tight mb-2">
                                 My Orders
                             </Text>
-                            <Text className="text-sm text-white/80 mb-4">
-                                Track your pending, paid, or not paid orders
+                            <Text className="text-base text-white/90 mb-6 leading-6">
+                                Track and manage all your orders in one place
                             </Text>
-                            <View className="flex-row gap-x-3">
-                                {TABS.map((tab) => (
-                                    <Pressable key={tab} onPress={() => setActiveTab(tab)}>
-                                        <View
-                                            className={`min-h-[30px] px-4 py-1 justify-center rounded-full ${
-                                                activeTab === tab ? "bg-white" : "bg-black/30"
-                                            }`}
-                                        >
-                                            <Text
-                                                className={`text-sm font-semibold ${
-                                                    activeTab === tab
-                                                        ? "text-black"
-                                                        : "text-white/80"
-                                                }`}
-                                            >
-                                                {tab}
-                                            </Text>
-                                        </View>
-                                    </Pressable>
-                                ))}
-                            </View>
-                        </SafeAreaView>
-                    </View>
-                </BlurView>
+                        </View>
+                    </SafeAreaView>
+                </LinearGradient>
             </Animated.View>
 
-            {/* 🔄 Order List */}
+            {/* Sticky Tabs */}
+            <Animated.View
+                style={[
+                    {
+                        position: "absolute",
+                        top: HEADER_HEIGHT,
+                        left: 0,
+                        right: 0,
+                        zIndex: 20,
+                        backgroundColor: "white",
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 4,
+                        elevation: 5,
+                    },
+                    stickyTabsStyle
+                ]}
+            >
+                <View className="relative">
+                    {/* Tab Indicator */}
+                    <Animated.View
+                        style={[
+                            {
+                                position: "absolute",
+                                bottom: 0,
+                                height: 3,
+                                width: SCREEN_WIDTH / TABS.length,
+                                backgroundColor: "#F97316",
+                                borderRadius: 2,
+                            },
+                            tabIndicatorStyle
+                        ]}
+                    />
+
+                    <View className="flex-row">
+                        {TABS.map((tab, index) => (
+                            <Pressable
+                                key={tab}
+                                onPress={() => handleTabPress(tab, index)}
+                                className="flex-1"
+                            >
+                                <View className="py-4 px-4 items-center justify-center">
+                                    <Text
+                                        className={`text-base font-semibold ${
+                                            activeTab === tab
+                                                ? "text-orange-500"
+                                                : "text-gray-600"
+                                        }`}
+                                    >
+                                        {tab}
+                                    </Text>
+                                </View>
+                            </Pressable>
+                        ))}
+                    </View>
+                </View>
+            </Animated.View>
+
+            {/* Order List */}
             <Animated.FlatList
-                data={isLoading ? [] : orders}
-                keyExtractor={(item, index) => item.id?.toString() ?? `order-${index}`}
-                renderItem={({ item }) => <OrderCard order={item} />}
+                data={orders}
+                keyExtractor={keyExtractor}
+                renderItem={renderOrderItem}
                 onScroll={scrollHandler}
                 scrollEventThrottle={16}
+                showsVerticalScrollIndicator={false}
                 refreshControl={
                     <RefreshControl
                         refreshing={isRefreshing}
                         onRefresh={handleRefresh}
-                        tintColor="#000"
+                        tintColor="#F97316"
+                        colors={["#F97316"]}
+                        progressBackgroundColor="#FFFFFF"
                     />
                 }
-                ListEmptyComponent={
-                    isLoading ? (
-                        <View className="px-4 mt-4 space-y-4 bg-white">
-                            {[...Array(3)].map((_, i) => (
-                                <SkeletonCard key={`skeleton-${i}`} />
-                            ))}
-                        </View>
-                    ) : (
-                        <View className="flex-1 items-center justify-center py-16 px-6 bg-white">
-                            <Text className="text-6xl mb-4">🧵</Text>
-                            <Text className="text-lg text-gray-600 mb-2 font-semibold">
-                                No {activeTab.toLowerCase()} orders
-                            </Text>
-                            <Text className="text-sm text-gray-400 text-center">
-                                You're all caught up for now.
-                            </Text>
-                        </View>
-                    )
-                }
+                ListEmptyComponent={renderEmptyComponent}
                 contentContainerStyle={{
-                    paddingTop: 240, // ⬅️ Space for header height
-                    paddingBottom: 120,
-                    backgroundColor: "white",
+                    paddingTop: HEADER_HEIGHT + TAB_HEIGHT + 20,
+                    paddingBottom: 100,
+                    paddingHorizontal: 16,
                     flexGrow: 1,
                 }}
-                ListFooterComponent={<View className="px-4" />}
+                ItemSeparatorComponent={() => <View className="h-3" />}
                 className="bg-white"
+                removeClippedSubviews={true}
+                maxToRenderPerBatch={10}
+                windowSize={10}
+                initialNumToRender={8}
+                getItemLayout={(data, index) => ({
+                    length: 120, // Approximate item height
+                    offset: 120 * index,
+                    index,
+                })}
             />
         </View>
     );
