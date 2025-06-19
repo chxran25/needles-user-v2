@@ -17,8 +17,7 @@ import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { fetchRecommendedBoutiques, fetchRecommendedDressTypes } from '@/services/api';
 import BoutiqueCard from '@/components/boutique/BoutiqueCard';
 import RippleCircleOverlay from '@/components/RippleCircleOverlay';
-import type {Boutique, RecommendedDressType} from '@/types';
-
+import type { Boutique, RecommendedDressType } from '@/types';
 
 export default function HomeScreen() {
     const [search, setSearch] = useState('');
@@ -74,7 +73,7 @@ export default function HomeScreen() {
             >
                 {/* Header */}
                 <View className="flex-row items-center justify-between mb-4 px-1">
-                    <TouchableOpacity onPress={() => router.push('/UpdateLocation')}>
+                    <TouchableOpacity onPress={() => router.push('/map')}>
                         <Image
                             source={require('@/assets/images/update-location.png')}
                             style={{ width: 28, height: 28 }}
@@ -88,7 +87,6 @@ export default function HomeScreen() {
                     />
                     <View className="w-[26px]" /> {/* Spacer to balance layout */}
                 </View>
-
 
                 {/* Search Bar */}
                 <View className="mb-6">
@@ -122,7 +120,7 @@ export default function HomeScreen() {
                     />
                 </TouchableOpacity>
 
-                {/* Popular Categories (with ripple animation) */}
+                {/* Popular Categories */}
                 {renderSectionHeader('Popular Categories')}
                 <View className="flex-row flex-wrap gap-4">
                     {recommendedTypes.map((item, index) => (
@@ -200,14 +198,9 @@ export default function HomeScreen() {
                             pathname: '/top-boutique/[dressType]',
                             params: { dressType: ripple.label },
                         });
-
-                        // Delay removal of ripple until next frame
-                        setTimeout(() => {
-                            setRipple(null);
-                        }, 100); // enough time for screen to start rendering
+                        setTimeout(() => setRipple(null), 100);
                     }}
                 />
-
             )}
         </SafeAreaView>
     );
