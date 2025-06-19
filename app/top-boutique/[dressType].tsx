@@ -5,15 +5,7 @@ import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { fetchTopBoutiquesForDressType } from '@/services/api';
 import BoutiqueCard from '@/components/boutique/BoutiqueCard';
-
-type Boutique = {
-    _id: string;
-    name: string;
-    area: string;
-    headerImage?: string;
-    dressTypes: { type: string }[];
-    averageRating: number;
-};
+import type { Boutique } from '@/types';
 
 export default function TopBoutiquesForType() {
     const { dressType } = useLocalSearchParams();
@@ -57,47 +49,53 @@ export default function TopBoutiquesForType() {
         );
     }
 
-    if (error) {
-        return (
-            <View className="flex-1 justify-center items-center px-6">
-                <Text className="text-red-500 text-center text-base">{error}</Text>
-            </View>
-        );
-    }
-
     return (
         <SafeAreaView className="flex-1 bg-light-100 relative">
-            {/* Inline Back Button */}
+            {/* 🔙 Inline Back Button */}
             <TouchableOpacity
                 onPress={() => router.replace('/')}
-                className="absolute top-14 left-4 z-50 bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg"
+                className="absolute top-12 left-4 z-50 bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg"
             >
                 <Ionicons name="arrow-back" size={20} color="black" />
             </TouchableOpacity>
 
-            <ScrollView className="px-4 pt-14">
+            <ScrollView className="px-4 pt-20">
                 <Text className="text-2xl font-bold mb-4 capitalize">
                     Top Boutiques for “{dressType}”
                 </Text>
 
-                <View className="gap-6 pb-16">
-                    {boutiques.length === 0 ? (
-                        <Text className="text-gray-500 text-center">
+                {error ? (
+                    <Text className="text-red-500 text-center text-base">{error}</Text>
+                ) : boutiques.length === 0 ? (
+                    <View className="flex items-center justify-center h-[300px]">
+                        <Text className="text-gray-500 text-base text-center">
                             No nearby boutiques found for this style.
                         </Text>
-                    ) : (
-                        boutiques.map((boutique) => {
-                            const image =
-                                typeof boutique.headerImage === 'string' &&
-                                boutique.headerImage.startsWith('http')
-                                    ? boutique.headerImage
-                                    : boutique.headerImage
-                                        ? `https://needles-v1.onrender.com${boutique.headerImage}`
-                                        : undefined;
+                    </View>
+                ) : (
+                    <View className="gap-6 pb-16">
+                        {boutiques.map((boutique) => {
+                            console.log('🧪 Boutique ID:', boutique._id);
+                            console.log('📷 headerImage raw:', boutique.headerImage);
+                            console.log('🖼️ gallery:', boutique.gallery);
 
-                            const uniqueTags = Array.from(
+                            const headerImage =
+                                Array.isArray(boutique.gallery) && boutique.gallery.length > 0
+                                    ? boutique.gallery[0]
+                                    : typeof boutique.headerImage === 'string'
+                                        ? boutique.headerImage
+                                        : Array.isArray(boutique.headerImage) && boutique.headerImage.length > 0
+                                            ? boutique.headerImage[0]
+                                            : 'https://via.placeholder.com/300x160';
+
+                            console.log('✅ Final image used for card:', headerImage);
+
+                            const uniqueTags: string[] = Array.from(
                                 new Map(
-                                    boutique.dressTypes.map((d) => [d.type.toLowerCase().trim(), d.type])
+                                    (boutique.dressTypes ?? []).map((d) => [
+                                        d.type.toLowerCase().trim(),
+                                        d.type,
+                                    ])
                                 ).values()
                             );
 
@@ -108,13 +106,13 @@ export default function TopBoutiquesForType() {
                                     name={boutique.name}
                                     tags={uniqueTags}
                                     location={boutique.area}
-                                    image={image}
+                                    image={headerImage}
                                     rating={boutique.averageRating}
                                 />
                             );
-                        })
-                    )}
-                </View>
+                        })}
+                    </View>
+                )}
             </ScrollView>
         </SafeAreaView>
     );

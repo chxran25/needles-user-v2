@@ -7,14 +7,21 @@ import {
     TouchableOpacity,
     NativeSyntheticEvent,
     NativeScrollEvent,
+    ScrollView as RNScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useScrollContext } from '@/context/ScrollContext';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { fetchRecommendedBoutiques, fetchRecommendedDressTypes } from '@/services/api';
+
+import {
+    fetchRecommendedBoutiques,
+    fetchRecommendedDressTypes,
+    fetchTopRatedBoutiques,
+} from '@/services/api';
+
 import BoutiqueCard from '@/components/boutique/BoutiqueCard';
 import RippleCircleOverlay from '@/components/RippleCircleOverlay';
 import type { Boutique, RecommendedDressType } from '@/types';
@@ -23,10 +30,19 @@ export default function HomeScreen() {
     const [search, setSearch] = useState('');
     const [recommendedBoutiques, setRecommendedBoutiques] = useState<Boutique[]>([]);
     const [recommendedTypes, setRecommendedTypes] = useState<RecommendedDressType[]>([]);
+    const [topRatedBoutiques, setTopRatedBoutiques] = useState<Boutique[]>([]);
     const [ripple, setRipple] = useState<{ x: number; y: number; label: string } | null>(null);
 
     const router = useRouter();
     const { setScrollY } = useScrollContext();
+
+    const scrollRef = useRef<RNScrollView>(null);
+    const [scrollX, setScrollX] = useState(0);
+    const [isScrolling, setIsScrolling] = useState(true);
+    const scrollSpeed = 0.5; // Pixels per frame - adjust for speed
+    const cardWidth = 250;
+    const cardGap = 16;
+    const itemWidth = cardWidth + cardGap;
 
     const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
         const currentOffset = event.nativeEvent.contentOffset.y;
@@ -46,14 +62,18 @@ export default function HomeScreen() {
     useEffect(() => {
         const loadRecommendedData = async () => {
             try {
-                const boutiques = await fetchRecommendedBoutiques();
-                setRecommendedBoutiques(boutiques);
+                const [boutiques, types, topRated] = await Promise.all([
+                    fetchRecommendedBoutiques(),
+                    fetchRecommendedDressTypes(),
+                    fetchTopRatedBoutiques(),
+                ]);
 
-                const types = await fetchRecommendedDressTypes();
-                setRecommendedTypes(types);
+                setRecommendedBoutiques(boutiques || []);
+                setRecommendedTypes(types || []);
+                setTopRatedBoutiques(topRated || []);
             } catch (err: any) {
                 console.error(
-                    'Error fetching recommended data:',
+                    'Error fetching home data:',
                     err.response?.status,
                     err.response?.data || err.message
                 );
@@ -62,6 +82,62 @@ export default function HomeScreen() {
 
         loadRecommendedData();
     }, []);
+
+    // Smooth infinite auto-scroll for top rated boutiques
+    useEffect(() => {
+        if (topRatedBoutiques.length === 0 || !isScrolling) return;
+
+        let animationId: number;
+        let currentScrollX = scrollX;
+        let lastTimestamp = 0;
+
+        const animate = (timestamp: number) => {
+            if (!scrollRef.current) return;
+
+            // Calculate delta time for consistent speed across different frame rates
+            const deltaTime = timestamp - lastTimestamp;
+            lastTimestamp = timestamp;
+
+            // Skip first frame to avoid large delta
+            if (deltaTime > 0 && deltaTime < 100) {
+                currentScrollX += (scrollSpeed * deltaTime) / 16.67; // Normalize to 60fps
+
+                const maxScroll = topRatedBoutiques.length * itemWidth;
+
+                // Reset position when we reach the end of original items
+                if (currentScrollX >= maxScroll) {
+                    currentScrollX = 0;
+                    scrollRef.current.scrollTo({ x: 0, animated: false });
+                } else {
+                    scrollRef.current.scrollTo({ x: currentScrollX, animated: false });
+                }
+            }
+
+            animationId = requestAnimationFrame(animate);
+        };
+
+        animationId = requestAnimationFrame(animate);
+
+        return () => {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+        };
+    }, [topRatedBoutiques, isScrolling, itemWidth, scrollSpeed]);
+
+    // Create duplicated array for seamless loop
+    const duplicatedTopRated = topRatedBoutiques.length > 0
+        ? [...topRatedBoutiques, ...topRatedBoutiques, ...topRatedBoutiques]
+        : [];
+
+    const handleScrollBegin = () => {
+        setIsScrolling(false);
+    };
+
+    const handleScrollEnd = () => {
+        // Resume auto-scroll after user interaction
+        setTimeout(() => setIsScrolling(true), 2000);
+    };
 
     return (
         <SafeAreaView className="flex-1 bg-light-100">
@@ -85,7 +161,7 @@ export default function HomeScreen() {
                         style={{ width: 225, height: 85 }}
                         resizeMode="contain"
                     />
-                    <View className="w-[26px]" /> {/* Spacer to balance layout */}
+                    <View className="w-[26px]" />
                 </View>
 
                 {/* Search Bar */}
@@ -107,18 +183,51 @@ export default function HomeScreen() {
                     </TouchableOpacity>
                 </View>
 
-                {/* One Day Delivery */}
-                {renderSectionHeader('One Day Delivery')}
-                <TouchableOpacity
-                    className="rounded-2xl overflow-hidden shadow-lg"
-                    onPress={() => router.push('./one-day-delivery')}
-                >
-                    <Image
-                        source={require('@/assets/images/one-day-delivery.png')}
-                        className="w-full h-56"
-                        resizeMode="cover"
-                    />
-                </TouchableOpacity>
+                {/* 🏆 Top Rated in City */}
+                {topRatedBoutiques.length > 0 && (
+                    <>
+                        {renderSectionHeader('Top Rated in City')}
+                        <RNScrollView
+                            ref={scrollRef}
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={{
+                                gap: cardGap,
+                                paddingRight: cardGap,
+                                paddingLeft: cardGap
+                            }}
+                            scrollEventThrottle={1}
+                            decelerationRate="normal"
+                            snapToAlignment="start"
+                            onScrollBeginDrag={handleScrollBegin}
+                            onScrollEndDrag={handleScrollEnd}
+                            onMomentumScrollEnd={handleScrollEnd}
+                        >
+                            {duplicatedTopRated.map((item, index) => {
+                                const rawImage = Array.isArray(item.headerImage)
+                                    ? item.headerImage[0]
+                                    : item.headerImage;
+
+                                const finalImage = rawImage?.startsWith('http')
+                                    ? rawImage
+                                    : `https://needles-v1.onrender.com${rawImage}`;
+
+                                return (
+                                    <View key={`${item._id}-${index}`} style={{ width: cardWidth }}>
+                                        <BoutiqueCard
+                                            id={item._id}
+                                            name={item.name}
+                                            location={item.area}
+                                            image={finalImage}
+                                            tags={item.dressTypes?.map((d) => d.type) || []}
+                                            rating={item.averageRating}
+                                        />
+                                    </View>
+                                );
+                            })}
+                        </RNScrollView>
+                    </>
+                )}
 
                 {/* Popular Categories */}
                 {renderSectionHeader('Popular Categories')}
@@ -143,9 +252,7 @@ export default function HomeScreen() {
                                     <Ionicons name="shirt-outline" size={40} color="gray" />
                                 </View>
                             )}
-                            <Text className="mt-2 text-sm text-center text-gray-700">
-                                {item.label}
-                            </Text>
+                            <Text className="mt-2 text-sm text-center text-gray-700">{item.label}</Text>
                         </TouchableOpacity>
                     ))}
                 </View>
@@ -170,7 +277,7 @@ export default function HomeScreen() {
                                 <BoutiqueCard
                                     id={boutique._id}
                                     name={boutique.name}
-                                    tags={boutique.dressTypes?.map(dt => dt.type) ?? []}
+                                    tags={boutique.dressTypes?.map((dt) => dt.type) ?? []}
                                     location={boutique.area}
                                     image={finalImage}
                                     rating={boutique.averageRating}

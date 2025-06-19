@@ -189,11 +189,14 @@ export const fetchTopBoutiquesForDressType = async (dressType: string): Promise<
     return response.data;
 };
 
-export const fetchSearchResults = async (query: string): Promise<Boutique[]> => {
+
+
+export const fetchSearchResults = async (query: string): Promise<{ results: Boutique[]; message?: string }> => {
     if (!query) throw new Error("Search query is required");
     const response = await api.get("/User/search", { params: { query } });
-    return response.data;
+    return response.data; // this contains `results` and `message`
 };
+
 
 export const fetchBoutiqueDetails = async (id: string): Promise<Boutique> => {
     if (!id) throw new Error("Boutique ID is required");
@@ -312,3 +315,15 @@ export const submitOrderRating = async ({
     });
     return response.data;
 };
+
+export const fetchTopRatedBoutiques = async (): Promise<Boutique[]> => {
+    try {
+        const response = await api.get("/User/top-rated");
+        return response.data.data; // Assuming backend wraps data inside `{ data: [...] }`
+    } catch (err) {
+        console.error("❌ Error fetching top-rated boutiques:", err);
+        return [];
+    }
+};
+
+

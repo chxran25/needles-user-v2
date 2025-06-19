@@ -14,15 +14,7 @@ import {
     View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-type Boutique = {
-    _id: string;
-    name: string;
-    area: string;
-    averageRating: number;
-    headerImage?: string;
-    dressTypes: { type: string }[];
-};
+import type { Boutique } from '@/types';
 
 export default function SearchScreen() {
     const [search, setSearch] = useState('');
@@ -32,7 +24,7 @@ export default function SearchScreen() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const inputRef = useRef<TextInput>(null);
-    const {autoFocus} = useLocalSearchParams();
+    const { autoFocus } = useLocalSearchParams();
 
     useEffect(() => {
         if (autoFocus === 'true') {
@@ -51,8 +43,8 @@ export default function SearchScreen() {
         try {
             const res = await fetchSearchResults(search.trim());
             console.log("🔍 API response:", res);
-            setResults(res?.results || []);
-            setFallbackMessage(res.message || '');
+            setResults(res.results || []);
+            setFallbackMessage(res.results?.length === 0 ? res.message || 'No results found.' : '');
         } catch (err) {
             console.error("❌ Search Error:", err);
             setError('Something went wrong while searching.');
@@ -60,10 +52,6 @@ export default function SearchScreen() {
             setLoading(false);
         }
     };
-
-    const filteredResults = selectedTag
-        ? results.filter((item) => item.dressTypes?.some((d: { type: string }) => d.type === selectedTag))
-        : results;
 
     return (
         <SafeAreaView className="flex-1 bg-background">
@@ -74,11 +62,11 @@ export default function SearchScreen() {
                 <ScrollView
                     className="flex-1 px-4 pt-10"
                     keyboardShouldPersistTaps="handled"
-                    contentContainerStyle={{paddingBottom: 80, flexGrow: 1}}
+                    contentContainerStyle={{ paddingBottom: 80, flexGrow: 1 }}
                 >
                     {/* Search Bar */}
                     <View className="flex-row items-center bg-white rounded-full px-4 py-2 shadow-sm mb-4">
-                        <Ionicons name="search" size={20} color="gray"/>
+                        <Ionicons name="search" size={20} color="gray" />
                         <TextInput
                             ref={inputRef}
                             className="flex-1 ml-2 text-sm"
@@ -88,7 +76,7 @@ export default function SearchScreen() {
                             onSubmitEditing={handleSearch}
                             returnKeyType="search"
                         />
-                        <Ionicons name="mic-outline" size={20} color="gray"/>
+                        <Ionicons name="mic-outline" size={20} color="gray" />
                     </View>
 
                     {/* Tag Filters */}
@@ -100,7 +88,7 @@ export default function SearchScreen() {
                                     const newTag = tag === selectedTag ? '' : tag;
                                     setSelectedTag(newTag);
                                     setSearch(newTag);
-                                    handleSearch(); // auto-search on tag press
+                                    handleSearch(); // auto-search
                                 }}
                                 className={`px-3 py-1 rounded-full ${
                                     selectedTag === tag ? 'bg-blue-600' : 'bg-blue-100'
@@ -124,22 +112,34 @@ export default function SearchScreen() {
 
                     {/* Results */}
                     {loading ? (
-                        <ActivityIndicator size="large" className="mt-10"/>
+                        <ActivityIndicator size="large" className="mt-10" />
                     ) : error ? (
                         <Text className="text-center text-red-500 mt-20">{error}</Text>
-                    ) : filteredResults.length > 0 ? (
+                    ) : results.length > 0 ? (
                         <View className="gap-4 mb-10">
-                            {filteredResults.map((boutique) => (
-                                <BoutiqueCard
-                                    key={boutique._id}
-                                    id={boutique._id}
-                                    name={boutique.name}
-                                    location={boutique.area}
-                                    rating={boutique.averageRating}
-                                    image={boutique.headerImage || 'https://via.placeholder.com/300x160'}
-                                    tags={boutique.dressTypes?.map((d: { type: string }) => d.type) || []}
-                                />
-                            ))}
+                            {results.map((boutique) => {
+                                const headerImage =
+                                    typeof boutique.headerImage === 'string'
+                                        ? boutique.headerImage
+                                        : Array.isArray(boutique.headerImage) && boutique.headerImage.length > 0
+                                            ? boutique.headerImage[0]
+                                            : 'https://via.placeholder.com/300x160';
+
+                                console.log('🧪 Raw headerImage:', boutique.headerImage);
+
+
+                                return (
+                                    <BoutiqueCard
+                                        key={boutique._id}
+                                        id={boutique._id}
+                                        name={boutique.name}
+                                        location={boutique.area}
+                                        rating={boutique.averageRating}
+                                        image={headerImage}
+                                        tags={boutique.dressTypes?.map((d) => d.type) || []}
+                                    />
+                                );
+                            })}
                         </View>
                     ) : (
                         <Text className="text-center text-gray-500 mt-20">No boutiques found.</Text>
