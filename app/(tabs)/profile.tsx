@@ -133,7 +133,7 @@ export default function ProfilePage(): JSX.Element {
     };
 
     const initials = profileData?.name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'U';
-    const fullAddress = `${profileData?.address?.flatNumber || ''}, Block ${profileData?.address?.block || ''}, ${profileData?.address?.street || ''}`;
+    const fullAddress = `${profileData?.address?.flatNumber || ''}, ${profileData?.address?.block || ''}, ${profileData?.address?.street || ''}`;
 
     return (
         <SafeAreaView className="flex-1 bg-slate-50 mt-10">

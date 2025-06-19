@@ -1,7 +1,8 @@
 import * as SecureStore from "expo-secure-store";
 
-// ✅ Token Key Constant
+// ✅ Token Key Constants
 export const ACCESS_TOKEN_KEY = "accessToken";
+export const REFRESH_TOKEN_KEY = "refreshToken";
 
 // 🔐 Save a token
 export const saveToken = async (key: string, value: string) => {
@@ -35,7 +36,7 @@ export const deleteToken = async (key: string) => {
 export const clearAllTokens = async () => {
     try {
         await deleteToken(ACCESS_TOKEN_KEY);
-        // Add additional keys here if needed
+        await deleteToken(REFRESH_TOKEN_KEY); // 🔄 Clear refresh token as well
     } catch (error) {
         console.error("Error clearing tokens:", error);
     }

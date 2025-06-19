@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, {
+    createContext,
+    useContext,
+    useState,
+    useEffect,
+    ReactNode,
+} from "react";
+import { refreshAccessToken } from "@/services/auth";
 
 type SessionContextType = {
     expired: boolean;
@@ -13,6 +20,20 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
 
     const triggerSessionExpired = () => setExpired(true);
     const resetSession = () => setExpired(false);
+
+    useEffect(() => {
+        const interval = setInterval(async () => {
+            try {
+                console.log("🔄 Attempting token refresh...");
+                await refreshAccessToken();
+            } catch (err) {
+                console.warn("⚠️ Token refresh failed, possibly expired:", err);
+                triggerSessionExpired(); // Triggers modal
+            }
+        }, 15 * 60 * 1000); // ⏱ every 15 minutes
+
+        return () => clearInterval(interval);
+    }, []);
 
     return (
         <SessionContext.Provider value={{ expired, triggerSessionExpired, resetSession }}>

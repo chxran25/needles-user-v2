@@ -5,7 +5,8 @@ import { router } from 'expo-router';
 
 import { Boutique, CatalogueItem } from '@/types';
 import { Order } from '@/types/order';
-import { clearAllTokens } from '@/utils/secureStore';
+import { clearAllTokens, saveToken } from '@/utils/secureStore';
+import { refreshAccessToken } from '@/services/auth'; // ✅ moved here
 
 // ✅ Setup Axios instance
 const api = axios.create({
@@ -30,32 +31,62 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// ✅ Global 401 Handler
-let alreadyAlerted = false;
+// ✅ Global 401 Retry Handler with Refresh
+let isRefreshing = false;
+let failedQueue: any[] = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+    failedQueue.forEach(prom => {
+        if (error) {
+            prom.reject(error);
+        } else {
+            prom.resolve(token);
+        }
+    });
+    failedQueue = [];
+};
 
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
+        const originalRequest = error.config;
         const status = error?.response?.status;
 
-        if (status === 401 && !alreadyAlerted) {
-            alreadyAlerted = true;
+        if (status === 401 && !originalRequest._retry) {
+            if (isRefreshing) {
+                return new Promise((resolve, reject) => {
+                    failedQueue.push({ resolve, reject });
+                }).then((token) => {
+                    if (typeof token === "string") {
+                        originalRequest.headers.Authorization = `Bearer ${token}`;
+                        return api(originalRequest);
+                    } else {
+                        return Promise.reject(new Error("Invalid token"));
+                    }
+                });
+            }
 
-            Alert.alert(
-                "Session Expired",
-                "Your login session has expired. Please log in again.",
-                [
+            originalRequest._retry = true;
+            isRefreshing = true;
+
+            try {
+                const newToken = await refreshAccessToken();
+                processQueue(null, newToken);
+                originalRequest.headers.Authorization = `Bearer ${newToken}`;
+                return api(originalRequest);
+            } catch (refreshError) {
+                processQueue(refreshError, null);
+                await clearAllTokens();
+                Alert.alert("Session Expired", "Please login again.", [
                     {
                         text: "OK",
-                        onPress: async () => {
-                            await clearAllTokens();
-                            router.replace("/(auth)/login");
-                            alreadyAlerted = false;
-                        },
+                        onPress: () => router.replace("/(auth)/login"),
                     },
-                ],
-                { cancelable: false }
-            );
+                ]);
+                return Promise.reject(refreshError);
+            } finally {
+                isRefreshing = false;
+            }
         }
 
         return Promise.reject(error);
@@ -70,7 +101,11 @@ export const userLogin = async ({ phone }: { phone: string }) => {
 
 export const verifyOtp = async ({ phone, otp }: { phone: string; otp: string }) => {
     const response = await api.post("/User/verify-otp", { phone, otp });
-    console.log(response);
+    const { accessToken, refreshToken } = response.data;
+
+    await saveToken("accessToken", accessToken);
+    await saveToken("refreshToken", refreshToken);
+
     return response.data;
 };
 
@@ -259,3 +294,5 @@ export const logoutUser = async (): Promise<{ message: string }> => {
     const response = await api.post("/User/logout");
     return response.data;
 };
+
+export default api;
