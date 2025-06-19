@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "expo-router";
 import { getToken } from "@/utils/secureStore";
+import { Alert } from "react-native";
 
 export const useAuthRedirect = () => {
     const [checking, setChecking] = useState(true);
@@ -15,11 +16,21 @@ export const useAuthRedirect = () => {
                 console.log("🧠 Auth check | token:", token, "| path:", pathname);
 
                 if (!token && pathname !== "/login" && pathname !== "/otp") {
-                    router.replace("/login");
+                    Alert.alert(
+                        "Session Expired",
+                        "Your session has expired. Please login again.",
+                        [
+                            {
+                                text: "OK",
+                                onPress: () => router.replace("/(auth)/login"),
+                            },
+                        ],
+                        { cancelable: false }
+                    );
                 }
             } catch (error) {
                 console.error("🔴 Auth token check failed:", error);
-                router.replace("/login");
+                router.replace("/(auth)/login");
             } finally {
                 setChecking(false);
             }
@@ -27,7 +38,6 @@ export const useAuthRedirect = () => {
 
         checkAuth();
     }, []);
-
 
     return checking;
 };

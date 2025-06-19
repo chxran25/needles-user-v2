@@ -1,9 +1,11 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import { Alert } from 'react-native';
+import { router } from 'expo-router';
 
 import { Boutique, CatalogueItem } from '@/types';
 import { Order } from '@/types/order';
-
+import { clearAllTokens } from '@/utils/secureStore';
 
 // ✅ Setup Axios instance
 const api = axios.create({
@@ -28,8 +30,39 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// ✅ API Methods
+// ✅ Global 401 Handler
+let alreadyAlerted = false;
 
+api.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+        const status = error?.response?.status;
+
+        if (status === 401 && !alreadyAlerted) {
+            alreadyAlerted = true;
+
+            Alert.alert(
+                "Session Expired",
+                "Your login session has expired. Please log in again.",
+                [
+                    {
+                        text: "OK",
+                        onPress: async () => {
+                            await clearAllTokens();
+                            router.replace("/(auth)/login");
+                            alreadyAlerted = false;
+                        },
+                    },
+                ],
+                { cancelable: false }
+            );
+        }
+
+        return Promise.reject(error);
+    }
+);
+
+// ✅ API Methods
 export const userLogin = async ({ phone }: { phone: string }) => {
     const response = await api.post("/User/login", { phone });
     return response.data;
@@ -37,6 +70,7 @@ export const userLogin = async ({ phone }: { phone: string }) => {
 
 export const verifyOtp = async ({ phone, otp }: { phone: string; otp: string }) => {
     const response = await api.post("/User/verify-otp", { phone, otp });
+    console.log(response);
     return response.data;
 };
 
@@ -100,13 +134,8 @@ export const fetchSearchResults = async (query: string): Promise<Boutique[]> => 
 export const fetchBoutiqueDetails = async (id: string): Promise<Boutique> => {
     if (!id) throw new Error("Boutique ID is required");
 
-    try {
-        const response = await api.get(`/User/boutique/${id}`);
-        return response.data.boutique;
-    } catch (error) {
-        console.error("❌ API Error (fetchBoutiqueDetails):", error);
-        throw error;
-    }
+    const response = await api.get(`/User/boutique/${id}`);
+    return response.data.boutique;
 };
 
 export const fetchBoutiqueCatalogue = async (
@@ -125,14 +154,9 @@ export const placeOrder = async (formData: FormData): Promise<any> => {
     return response.data;
 };
 
-// ✅ Corrected to fetch actual Not Paid orders
 export const fetchNotPaidOrders = async (): Promise<Order[]> => {
-    console.log("📡 Calling /User/order/Pending (Not Paid orders)");
     const response = await api.get("/User/order/Pending");
-    console.log("🧾 Raw backend response:", response.data);
-
-
-    const orders: Order[] = response.data.orders.map((o: any) => ({
+    return response.data.orders.map((o: any) => ({
         id: o.orderId,
         status: "Not Paid",
         boutiqueName: o.boutiqueName,
@@ -141,36 +165,24 @@ export const fetchNotPaidOrders = async (): Promise<Order[]> => {
         price: o.amount,
         deliveryDate: o.deliveryDate ?? "N/A",
     }));
-
-    console.log("✅ Not Paid Orders:", orders);
-    return orders;
 };
 
-
 export const fetchActualPendingOrders = async (): Promise<Order[]> => {
-    console.log("📡 Calling /User/order/OrderPending (Actual pending orders)");
     const response = await api.get("/User/order/OrderPending");
-
-    const orders: Order[] = response.data.orders.map((o: any) => ({
+    return response.data.orders.map((o: any) => ({
         id: o.orderId,
         status: "Pending",
         boutiqueName: o.boutiqueName,
         imageUrl: o.referralImage,
-        dressType: o.dressType ?? "Custom Dress", // fallback
+        dressType: o.dressType ?? "Custom Dress",
         price: o.amount,
         deliveryDate: o.deliveryDate ?? "N/A",
     }));
-
-    console.log("✅ Actual Pending Orders:", orders);
-    return orders;
 };
 
-
 export const fetchPaidOrders = async (): Promise<Order[]> => {
-    console.log("📡 Calling /User/order/Paid");
     const response = await api.get("/User/order/Paid");
-
-    const orders: Order[] = response.data.orders.map((o: any) => ({
+    return response.data.orders.map((o: any) => ({
         id: o.orderId,
         status: "Paid",
         boutiqueName: o.boutiqueName,
@@ -179,9 +191,6 @@ export const fetchPaidOrders = async (): Promise<Order[]> => {
         price: o.amount,
         deliveryDate: o.deliveryDate ?? "N/A",
     }));
-
-    console.log("✅ Paid Orders:", orders);
-    return orders;
 };
 
 export const fetchBillDetails = async (orderId: string): Promise<any> => {
@@ -196,5 +205,57 @@ export const markBillAsPaid = async (orderId: string): Promise<any> => {
 
 export const rejectBill = async (orderId: string): Promise<any> => {
     const response = await api.get(`/User/order/Pending/${orderId}/Bill/Reject`);
+    return response.data;
+};
+
+export const updateUserLocation = async ({
+                                             lat,
+                                             lng,
+                                             flatNumber,
+                                             block,
+                                             street,
+                                         }: {
+    lat: number;
+    lng: number;
+    flatNumber: string;
+    block: string;
+    street: string;
+}): Promise<any> => {
+    const response = await api.put("/User/location", {
+        lat,
+        lng,
+        flatNumber,
+        block,
+        street,
+    });
+    return response.data;
+};
+
+export const fetchUserProfile = async (): Promise<{
+    name: string;
+    phone: string;
+    address: {
+        flatNumber?: string;
+        block?: string;
+        street?: string;
+    };
+}> => {
+    const response = await api.get("/User/profile");
+    return response.data.user;
+};
+
+export const updateUserName = async (name: string): Promise<{
+    message: string;
+    user: {
+        name: string;
+        phone: string;
+    };
+}> => {
+    const response = await api.put("/User/update-name", { name });
+    return response.data;
+};
+
+export const logoutUser = async (): Promise<{ message: string }> => {
+    const response = await api.post("/User/logout");
     return response.data;
 };
