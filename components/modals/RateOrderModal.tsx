@@ -16,13 +16,15 @@ import { X } from "lucide-react-native";
 
 interface RateOrderModalProps {
     boutiqueId: string;
+    orderId: string; // ✅ Add this line
     visible: boolean;
     onClose: () => void;
 }
 
+
 const { width } = Dimensions.get('window');
 
-export default function RateOrderModal({ boutiqueId, visible, onClose }: RateOrderModalProps) {
+export default function RateOrderModal({ boutiqueId, orderId, visible, onClose }: RateOrderModalProps) {
     const [rating, setRating] = useState(0);
     const [comment, setComment] = useState("");
     const [loading, setLoading] = useState(false);
@@ -104,7 +106,7 @@ export default function RateOrderModal({ boutiqueId, visible, onClose }: RateOrd
 
         try {
             setLoading(true);
-            await submitOrderRating({ boutiqueId, rating, comment });
+            await submitOrderRating({ boutiqueId, rating, comment, orderId });
             toast.show("Rating submitted successfully!", { type: "success" });
             onClose();
         } catch (err: any) {

@@ -316,17 +316,21 @@ export const submitOrderRating = async ({
                                             boutiqueId,
                                             rating,
                                             comment,
+                                            orderId,
                                         }: {
     boutiqueId: string;
     rating: number;
     comment?: string;
+    orderId: string;
 }): Promise<any> => {
     const response = await api.post("/User/rate-order", {
         boutiqueId,
         rating,
         comment,
+        orderId,
     });
     return response.data;
 };
+
 
 

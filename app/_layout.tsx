@@ -13,7 +13,7 @@ import "react-native-reanimated";
 import "./globals.css";
 
 export default function RootLayout() {
-    const checking = useAuthRedirect(); // Handle auth-based redirects
+    const checking = useAuthRedirect(); // ⏳ Handle auth-based redirects
 
     if (checking) return null;
 

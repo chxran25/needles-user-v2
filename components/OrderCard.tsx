@@ -89,8 +89,10 @@ export default function OrderCard({ order, type }: OrderCardProps) {
                 <RateOrderModal
                     visible={showRateModal}
                     boutiqueId={order.boutiqueId}
+                    orderId={order.id} // ✅ new prop
                     onClose={() => setShowRateModal(false)}
                 />
+
             )}
         </View>
     );
