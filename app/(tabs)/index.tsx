@@ -74,16 +74,21 @@ export default function HomeScreen() {
             >
                 {/* Header */}
                 <View className="flex-row items-center justify-between mb-4 px-1">
-                    <TouchableOpacity>
-                        <Ionicons name="menu" size={27} color="black" />
+                    <TouchableOpacity onPress={() => router.push('/UpdateLocation')}>
+                        <Image
+                            source={require('@/assets/images/update-location.png')}
+                            style={{ width: 28, height: 28 }}
+                            resizeMode="contain"
+                        />
                     </TouchableOpacity>
                     <Image
                         source={require('@/assets/images/needles-logo.png')}
                         style={{ width: 225, height: 85 }}
                         resizeMode="contain"
                     />
-                    <View className="w-[26px]" />
+                    <View className="w-[26px]" /> {/* Spacer to balance layout */}
                 </View>
+
 
                 {/* Search Bar */}
                 <View className="mb-6">
