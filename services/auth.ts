@@ -11,7 +11,7 @@ export const refreshAccessToken = async () => {
     }
 
     try {
-        const response = await api.post("/refresh-token", { refreshToken });
+        const response = await api.post("/User/refresh-token", { refreshToken });
         const { accessToken } = response.data;
 
         await saveToken("accessToken", accessToken);

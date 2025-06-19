@@ -18,6 +18,7 @@ import {
     fetchActualPendingOrders,
     fetchNotPaidOrders,
     fetchPaidOrders,
+    fetchCompletedOrders,
 } from "@/services/api";
 import { Order } from "@/types/order";
 
@@ -25,7 +26,7 @@ import OrderCard from "@/components/OrderCard";
 import SkeletonCard from "@/components/SkeletonCard";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
-const TABS = ["Pending", "Paid", "Not Paid"];
+const TABS = ["Pending", "Paid", "Not Paid", "Completed"];
 const HEADER_HEIGHT = 200;
 const TAB_HEIGHT = 50;
 
@@ -43,8 +44,6 @@ export default function OrdersScreen() {
     const scrollHandler = useAnimatedScrollHandler({
         onScroll: (event) => {
             scrollY.value = event.contentOffset.y;
-
-            // Update header visibility
             const shouldShowHeader = event.contentOffset.y < 50;
             if (shouldShowHeader !== headerVisible) {
                 runOnJS(setHeaderVisible)(shouldShowHeader);
@@ -52,34 +51,13 @@ export default function OrdersScreen() {
         },
     });
 
-    // Animated styles for header
     const headerAnimatedStyle = useAnimatedStyle(() => {
-        const translateY = interpolate(
-            scrollY.value,
-            [0, HEADER_HEIGHT],
-            [0, -HEADER_HEIGHT / 2],
-            Extrapolate.CLAMP
-        );
-        const opacity = interpolate(
-            scrollY.value,
-            [0, HEADER_HEIGHT / 2],
-            [1, 0],
-            Extrapolate.CLAMP
-        );
-        const scale = interpolate(
-            scrollY.value,
-            [0, HEADER_HEIGHT],
-            [1, 0.9],
-            Extrapolate.CLAMP
-        );
-
-        return {
-            transform: [{ translateY }, { scale }],
-            opacity,
-        };
+        const translateY = interpolate(scrollY.value, [0, HEADER_HEIGHT], [0, -HEADER_HEIGHT / 2], Extrapolate.CLAMP);
+        const opacity = interpolate(scrollY.value, [0, HEADER_HEIGHT / 2], [1, 0], Extrapolate.CLAMP);
+        const scale = interpolate(scrollY.value, [0, HEADER_HEIGHT], [1, 0.9], Extrapolate.CLAMP);
+        return { transform: [{ translateY }, { scale }], opacity };
     });
 
-    // Animated style for sticky tabs
     const stickyTabsStyle = useAnimatedStyle(() => {
         const translateY = interpolate(
             scrollY.value,
@@ -87,24 +65,17 @@ export default function OrdersScreen() {
             [0, -TAB_HEIGHT],
             Extrapolate.CLAMP
         );
-
-        return {
-            transform: [{ translateY }],
-        };
+        return { transform: [{ translateY }] };
     });
 
-    // Tab indicator animation
     const tabIndicatorStyle = useAnimatedStyle(() => {
-        return {
-            transform: [{ translateX: tabIndicatorPosition.value }],
-        };
+        return { transform: [{ translateX: tabIndicatorPosition.value }] };
     });
 
     const fetchOrders = useCallback(async () => {
         setIsLoading(true);
         try {
             let data: Order[] = [];
-
             switch (activeTab) {
                 case "Pending":
                     data = await fetchActualPendingOrders();
@@ -115,22 +86,17 @@ export default function OrdersScreen() {
                 case "Not Paid":
                     data = await fetchNotPaidOrders();
                     break;
+                case "Completed":
+                    data = await fetchCompletedOrders();
+                    break;
                 default:
                     throw new Error("Invalid tab selected");
             }
-
-            if (!Array.isArray(data)) {
-                throw new Error("Invalid orders response format");
-            }
-
             setOrders(data);
         } catch (error) {
             console.error("❌ Failed to load orders:", error);
             setOrders([]);
-            toast.show("Failed to load orders. Please try again.", {
-                type: "danger",
-                duration: 4000,
-            });
+            toast.show("Failed to load orders. Please try again.", { type: "danger", duration: 4000 });
         } finally {
             setIsLoading(false);
         }
@@ -148,19 +114,16 @@ export default function OrdersScreen() {
 
     const handleTabPress = useCallback((tab: string, index: number) => {
         setActiveTab(tab);
-
-        // Animate tab indicator
         const tabWidth = SCREEN_WIDTH / TABS.length;
         tabIndicatorPosition.value = withSpring(index * tabWidth);
-    }, [tabIndicatorPosition]);
+    }, []);
 
-    const renderOrderItem = useCallback(({ item, index }: { item: Order; index: number }) => (
-        <OrderCard
-            order={item}
-            type={activeTab.toLowerCase()}
-            index={index}
-        />
-    ), [activeTab]);
+    const renderOrderItem = useCallback(
+        ({ item, index }: { item: Order; index: number }) => (
+            <OrderCard order={item} type={activeTab.toLowerCase()} index={index} />
+        ),
+        [activeTab]
+    );
 
     const renderEmptyComponent = useCallback(() => {
         if (isLoading) {
@@ -182,55 +145,35 @@ export default function OrdersScreen() {
                 <Text className="text-sm text-gray-500 text-center leading-5">
                     {activeTab === "Pending"
                         ? "All your orders are up to date!"
-                        : `You don't have any ${activeTab.toLowerCase()} orders at the moment.`
-                    }
+                        : `You don't have any ${activeTab.toLowerCase()} orders at the moment.`}
                 </Text>
-                <Pressable
-                    onPress={fetchOrders}
-                    className="mt-6 bg-orange-500 px-6 py-3 rounded-full"
-                >
+                <Pressable onPress={fetchOrders} className="mt-6 bg-orange-500 px-6 py-3 rounded-full">
                     <Text className="text-white font-semibold">Refresh</Text>
                 </Pressable>
             </View>
         );
-    }, [isLoading, activeTab, fetchOrders]);
+    }, [isLoading, activeTab]);
 
-    const keyExtractor = useCallback((item: Order, index: number): string =>
-        item.id?.toString() ?? `order-${index}`, []
-    );
+    const keyExtractor = useCallback((item: Order, index: number): string => item.id?.toString() ?? `order-${index}`, []);
 
     return (
         <View className="flex-1 bg-white">
             <StatusBar barStyle="light-content" backgroundColor="#F97316" />
 
-            {/* Gradient Background Header */}
-            <Animated.View
-                style={[
-                    {
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        zIndex: 10,
-                    },
-                    headerAnimatedStyle
-                ]}
-            >
+            <Animated.View style={[{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 10 }, headerAnimatedStyle]}>
                 <LinearGradient
                     colors={["#F97316", "#FB923C", "#FFFFFF"]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 0, y: 1 }}
                     style={{
-                        height: HEADER_HEIGHT + 50, // Extra height for safe area
+                        height: HEADER_HEIGHT + 50,
                         borderBottomLeftRadius: 24,
                         borderBottomRightRadius: 24,
                     }}
                 >
                     <SafeAreaView edges={["top"]} className="flex-1 px-4 pt-4">
                         <View className="flex-1 justify-center">
-                            <Text className="text-3xl font-bold text-white tracking-tight mb-2">
-                                My Orders
-                            </Text>
+                            <Text className="text-3xl font-bold text-white tracking-tight mb-2">My Orders</Text>
                             <Text className="text-base text-white/90 mb-6 leading-6">
                                 Track and manage all your orders in one place
                             </Text>
@@ -239,7 +182,6 @@ export default function OrdersScreen() {
                 </LinearGradient>
             </Animated.View>
 
-            {/* Sticky Tabs */}
             <Animated.View
                 style={[
                     {
@@ -255,11 +197,10 @@ export default function OrdersScreen() {
                         shadowRadius: 4,
                         elevation: 5,
                     },
-                    stickyTabsStyle
+                    stickyTabsStyle,
                 ]}
             >
                 <View className="relative">
-                    {/* Tab Indicator */}
                     <Animated.View
                         style={[
                             {
@@ -270,23 +211,16 @@ export default function OrdersScreen() {
                                 backgroundColor: "#F97316",
                                 borderRadius: 2,
                             },
-                            tabIndicatorStyle
+                            tabIndicatorStyle,
                         ]}
                     />
-
                     <View className="flex-row">
                         {TABS.map((tab, index) => (
-                            <Pressable
-                                key={tab}
-                                onPress={() => handleTabPress(tab, index)}
-                                className="flex-1"
-                            >
-                                <View className="py-4 px-4 items-center justify-center">
+                            <Pressable key={tab} onPress={() => handleTabPress(tab, index)} className="flex-1">
+                                <View className="py-4 px-1 items-center justify-center">
                                     <Text
                                         className={`text-base font-semibold ${
-                                            activeTab === tab
-                                                ? "text-orange-500"
-                                                : "text-gray-600"
+                                            activeTab === tab ? "text-orange-500" : "text-gray-600"
                                         }`}
                                     >
                                         {tab}
@@ -298,7 +232,6 @@ export default function OrdersScreen() {
                 </View>
             </Animated.View>
 
-            {/* Order List */}
             <Animated.FlatList
                 data={orders}
                 keyExtractor={keyExtractor}
@@ -329,7 +262,7 @@ export default function OrdersScreen() {
                 windowSize={10}
                 initialNumToRender={8}
                 getItemLayout={(data, index) => ({
-                    length: 120, // Approximate item height
+                    length: 120,
                     offset: 120 * index,
                     index,
                 })}

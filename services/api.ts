@@ -30,6 +30,7 @@ api.interceptors.request.use(
     },
     (error) => Promise.reject(error)
 );
+export default api;
 
 // ✅ Global 401 Retry Handler with Refresh
 let isRefreshing = false;
@@ -228,6 +229,22 @@ export const fetchPaidOrders = async (): Promise<Order[]> => {
     }));
 };
 
+export const fetchCompletedOrders = async (): Promise<Order[]> => {
+    const response = await api.get("/User/order/Completed");
+
+    return response.data.orders.map((o: any) => ({
+        id: o._id ?? o.orderId,
+        boutiqueId: o.boutiqueId?._id ?? o.boutiqueId, // ✅ This line is critical
+        status: "Completed",
+        boutiqueName: o.boutiqueId?.name ?? "Boutique",
+        imageUrl: o.referralImage ?? "",
+        dressType: o.dressType ?? "Custom Dress",
+        price: o.bill?.totalAmount ?? 0,
+        deliveryDate: new Date(o.createdAt).toLocaleDateString(),
+    }));
+};
+
+
 export const fetchBillDetails = async (orderId: string): Promise<any> => {
     const response = await api.get(`/User/order/${orderId}/bill`);
     return response.data.bill;
@@ -295,4 +312,21 @@ export const logoutUser = async (): Promise<{ message: string }> => {
     return response.data;
 };
 
-export default api;
+export const submitOrderRating = async ({
+                                            boutiqueId,
+                                            rating,
+                                            comment,
+                                        }: {
+    boutiqueId: string;
+    rating: number;
+    comment?: string;
+}): Promise<any> => {
+    const response = await api.post("/User/rate-order", {
+        boutiqueId,
+        rating,
+        comment,
+    });
+    return response.data;
+};
+
+

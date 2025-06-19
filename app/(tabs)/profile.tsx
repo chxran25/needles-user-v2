@@ -1,4 +1,4 @@
-// ✅ Fully Updated ProfilePage Component with Layout Tweaks
+// ✅ Fully Updated ProfilePage Component with Smooth "My Orders" Navigation
 import React, { useState, useEffect, JSX } from 'react';
 import {
     View,
@@ -8,7 +8,6 @@ import {
     SafeAreaView,
     StatusBar,
     Alert,
-    ActivityIndicator,
     TextInput,
 } from 'react-native';
 import {
@@ -26,6 +25,7 @@ import {
 
 import { useToast } from 'react-native-toast-notifications';
 import { useRouter } from 'expo-router';
+import Animated, { FadeInRight } from 'react-native-reanimated';
 
 import { fetchUserProfile, updateUserName, logoutUser } from '@/services/api';
 import { getToken, clearAllTokens } from '@/utils/secureStore';
@@ -132,6 +132,10 @@ export default function ProfilePage(): JSX.Element {
         ]);
     };
 
+    const handleOrdersNavigation = () => {
+        router.push("/(tabs)/orders");
+    };
+
     const initials = profileData?.name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'U';
     const fullAddress = `${profileData?.address?.flatNumber || ''}, ${profileData?.address?.block || ''}, ${profileData?.address?.street || ''}`;
 
@@ -186,17 +190,44 @@ export default function ProfilePage(): JSX.Element {
                 <View className="mt-6 px-6">
                     <Text className="text-lg font-semibold text-gray-900 mb-3">Quick Actions</Text>
                     <View className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                        <MenuButton icon={wrapIcon(ShoppingBag)} title="My Orders" subtitle="View your order history" onPress={() => {}} iconBgColor="bg-green-50" iconColor="#059669" />
+                        <Animated.View entering={FadeInRight}>
+                            <MenuButton
+                                icon={wrapIcon(ShoppingBag)}
+                                title="My Orders"
+                                subtitle="View your order history"
+                                onPress={handleOrdersNavigation}
+                                iconBgColor="bg-green-50"
+                                iconColor="#059669"
+                            />
+                        </Animated.View>
                         <View className="h-px bg-gray-100 ml-20" />
-                        <MenuButton icon={wrapIcon(HelpCircle)} title="Help & Support" subtitle="Get assistance when you need it" onPress={() => {}} iconBgColor="bg-blue-50" iconColor="#0EA5E9" />
+                        <MenuButton
+                            icon={wrapIcon(HelpCircle)}
+                            title="Help & Support"
+                            subtitle="Get assistance when you need it"
+                            onPress={() => {}}
+                            iconBgColor="bg-blue-50"
+                            iconColor="#0EA5E9"
+                        />
                         <View className="h-px bg-gray-100 ml-20" />
-                        <MenuButton icon={wrapIcon(FileText)} title="Terms & Services" subtitle="Read our terms and conditions" onPress={() => {}} iconBgColor="bg-purple-50" iconColor="#8B5CF6" />
+                        <MenuButton
+                            icon={wrapIcon(FileText)}
+                            title="Terms & Services"
+                            subtitle="Read our terms and conditions"
+                            onPress={() => {}}
+                            iconBgColor="bg-purple-50"
+                            iconColor="#8B5CF6"
+                        />
                     </View>
                 </View>
 
                 {/* Logout Button */}
                 <View className="mt-8 px-6">
-                    <TouchableOpacity className="flex-row items-center justify-center bg-white py-4 rounded-xl border border-red-100 shadow-sm" onPress={handleLogout} activeOpacity={0.8}>
+                    <TouchableOpacity
+                        className="flex-row items-center justify-center bg-white py-4 rounded-xl border border-red-100 shadow-sm"
+                        onPress={handleLogout}
+                        activeOpacity={0.8}
+                    >
                         <LogOut size={20} color="#EF4444" />
                         <Text className="text-base font-semibold text-red-500 ml-2">Logout</Text>
                     </TouchableOpacity>

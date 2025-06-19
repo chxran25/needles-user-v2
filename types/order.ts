@@ -31,13 +31,15 @@
 //     voiceNoteUrl?: string;
 // };
 
-export type OrderStatus = "Pending" | "Paid" | "Not Paid";
+export type OrderStatus = "Pending" | "Paid" | "Not Paid" | "Completed";
+
 
 export interface Order {
     id: string;
     status: OrderStatus;
     location?: string; // ✅ Add this line
     boutiqueName: string;
+    boutiqueId: string; // ✅ Required for rating API
     imageUrl: string;
     dressType: string;
     price: number;
