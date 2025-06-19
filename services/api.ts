@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, {AxiosResponse} from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { Alert } from 'react-native';
 import { router } from 'expo-router';
@@ -324,6 +324,33 @@ export const fetchTopRatedBoutiques = async (): Promise<Boutique[]> => {
         console.error("❌ Error fetching top-rated boutiques:", err);
         return [];
     }
+};
+
+
+interface RegisterUserPayload {
+    name: string;
+    phone: string;
+    address?: {
+        flatNumber?: string;
+        block?: string;
+        street?: string;
+        location?: {
+            lat?: number;
+            lng?: number;
+        };
+    };
+}
+
+interface RegisterUserResponse {
+    message: string;
+    userId: string;
+}
+
+export const registerUser = async (
+    data: RegisterUserPayload
+): Promise<RegisterUserResponse> => {
+    const response: AxiosResponse<RegisterUserResponse> = await api.post('/User/signup', data);
+    return response.data;
 };
 
 
