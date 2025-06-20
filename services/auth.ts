@@ -2,6 +2,7 @@
 import axios from "axios";
 import { getToken, saveToken } from "@/utils/secureStore";
 
+// 🔁 Refresh Access Token using stored refresh token
 export const refreshAccessToken = async (): Promise<string> => {
     const refreshToken = await getToken("refreshToken");
 
@@ -15,20 +16,27 @@ export const refreshAccessToken = async (): Promise<string> => {
 
         const response = await axios.post(
             "https://needles-v1.onrender.com/User/refresh-token",
-            {}, // empty body
+            { refreshToken }, // ✅ Send refresh token in request body
             {
                 headers: {
-                    Authorization: `Bearer ${refreshToken}`, // ✅ correct format
                     "Content-Type": "application/json",
                 },
             }
         );
 
-        const { accessToken } = response.data;
+        const { accessToken, refreshToken: newRefreshToken } = response.data;
 
+        if (!accessToken) {
+            throw new Error("No access token received from refresh endpoint");
+        }
+
+        // 🧠 Optional: Update refresh token if backend rotated it
         await saveToken("accessToken", accessToken);
-        console.log("✅ Access token refreshed:", accessToken);
+        if (newRefreshToken) {
+            await saveToken("refreshToken", newRefreshToken);
+        }
 
+        console.log("✅ Access token refreshed:", accessToken);
         return accessToken;
     } catch (error: any) {
         console.error("❌ Failed to refresh token:", error?.response?.data || error.message);
