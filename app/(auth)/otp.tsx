@@ -96,13 +96,24 @@ export default function OtpScreen() {
                     <Text className="text-sm text-gray-700 font-medium mb-2">OTP Code</Text>
                     <TextInput
                         value={otp}
-                        onChangeText={setOtp}
+                        onChangeText={(text) => {
+                            // Remove any non-digit characters (including space, +, -, letters)
+                            const numericOnly = text.replace(/[^0-9]/g, '');
+                            setOtp(numericOnly);
+                        }}
                         keyboardType="number-pad"
                         maxLength={6}
-                        placeholder="Enter OTP"
-                        placeholderTextColor="#999"
-                        className="bg-gray-100 px-5 py-3 rounded-xl text-center text-xl tracking-widest text-gray-800"
+                        placeholderTextColor="#ccc"
+                        className="bg-gray-100 px-5 py-3 rounded-xl text-xl text-gray-800"
+                        style={{
+                            textAlign: 'center',
+                            fontVariant: ['tabular-nums'],
+                            fontFamily: 'monospace',
+                            letterSpacing: 12,
+                        }}
                     />
+
+
 
                     <Pressable
                         onPress={handleVerify}
