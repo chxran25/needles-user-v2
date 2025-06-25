@@ -179,7 +179,10 @@ export default function HomeScreen() {
                             editable={false}
                             pointerEvents="none"
                         />
-                        <Ionicons name="mic-outline" size={20} color="gray" />
+                        <TouchableOpacity onPress={() => router.push('/image-search')}>
+                            <Ionicons name="camera-outline" size={20} color="gray" />
+                        </TouchableOpacity>
+
                     </TouchableOpacity>
                 </View>
 

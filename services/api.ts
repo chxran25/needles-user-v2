@@ -353,4 +353,20 @@ export const registerUser = async (
     return response.data;
 };
 
+export const uploadImageForSearch = async (uri: string): Promise<any> => {
+    const formData = new FormData();
+    formData.append('image', {
+        uri,
+        name: 'search.jpg',
+        type: 'image/jpeg',
+    } as any);
+
+    const response = await api.post('/User/image', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+
+    return response.data;
+};
+
+
 
