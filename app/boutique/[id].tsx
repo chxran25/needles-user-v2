@@ -224,7 +224,6 @@ export default function BoutiqueDetails() {
                         style={{ transform: [{ translateY }], height: SCREEN_HEIGHT }}
                     >
                         <OrderForm
-                            categories={boutique.dressTypes?.map((d: { type: string }) => d.type) || []}
                             onClose={toggleOrderForm}
                             boutiqueId={boutique._id}
                             userAddress={boutique.area}
