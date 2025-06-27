@@ -1,9 +1,11 @@
 export type DressType = {
     type: string;
-    images?: string[];
+    images?: (string | { url: string })[];
     _id?: string;
-    measurementRequirements: string[];
+    measurementRequirements?: string[];
 };
+
+
 
 export type RecommendedDressType = {
     label: string;

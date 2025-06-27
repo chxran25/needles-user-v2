@@ -1,4 +1,4 @@
-import BoutiqueCard from '@/components/boutique/BoutiqueCard';
+import SearchedBoutiqueCard from '@/components/boutique/searchedBoutiqueCard';
 import { fetchSearchResults } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
@@ -117,29 +117,21 @@ export default function SearchScreen() {
                         <Text className="text-center text-red-500 mt-20">{error}</Text>
                     ) : results.length > 0 ? (
                         <View className="gap-4 mb-10">
-                            {results.map((boutique) => {
-                                const headerImage =
-                                    typeof boutique.headerImage === 'string'
-                                        ? boutique.headerImage
-                                        : Array.isArray(boutique.headerImage) && boutique.headerImage.length > 0
-                                            ? boutique.headerImage[0]
-                                            : 'https://via.placeholder.com/300x160';
+                            {results.map((boutique) => (
+                                <SearchedBoutiqueCard
+                                    key={boutique._id}
+                                    boutique={{
+                                        ...boutique,
+                                        dressTypes: (boutique.dressTypes ?? []).map((d) => ({
+                                            ...d,
+                                            images: d.images ?? [], // ← 🛠 Ensure images is always string[]
+                                        })),
+                                    }}
+                                    query={search}
+                                />
 
-                                console.log('🧪 Raw headerImage:', boutique.headerImage);
 
-
-                                return (
-                                    <BoutiqueCard
-                                        key={boutique._id}
-                                        id={boutique._id}
-                                        name={boutique.name}
-                                        location={boutique.area}
-                                        rating={boutique.averageRating}
-                                        image={headerImage}
-                                        tags={boutique.dressTypes?.map((d) => d.type) || []}
-                                    />
-                                );
-                            })}
+                            ))}
                         </View>
                     ) : (
                         <Text className="text-center text-gray-500 mt-20">No boutiques found.</Text>

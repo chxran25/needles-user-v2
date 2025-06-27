@@ -3,9 +3,16 @@ import { View, Text, ScrollView, Image, Pressable } from "react-native";
 import ImageViewing from "react-native-image-viewing";
 import CategoryTags from "@/components/boutique/CategoryTags";
 
+// Updated type for image object
+type ImageItem = {
+    _id: string;
+    url: string;
+    // embedding can be added if needed: embedding: number[]
+};
+
 type DressType = {
     type: string;
-    images?: string[];
+    images?: ImageItem[];
 };
 
 type Props = {
@@ -14,26 +21,35 @@ type Props = {
 
 export default function DressTypeGallery({ dressTypes }: Props) {
     const [selectedType, setSelectedType] = useState<string>("");
-    const [selectedImages, setSelectedImages] = useState<string[]>([]);
+    const [selectedImages, setSelectedImages] = useState<ImageItem[]>([]);
     const [isViewerOpen, setIsViewerOpen] = useState(false);
     const [imageIndex, setImageIndex] = useState(0);
 
     useEffect(() => {
+        console.log("👗 dressTypes received:", dressTypes);
         if (dressTypes.length > 0) {
-            setSelectedType(dressTypes[0].type);
-            setSelectedImages(dressTypes[0].images || []);
+            const firstType = dressTypes[0];
+            setSelectedType(firstType.type);
+            console.log("👉 default selected type:", firstType.type);
+            console.log("🖼 default images:", firstType.images);
+            setSelectedImages(firstType.images || []);
         }
     }, [dressTypes]);
 
     const handleSelect = (type: string) => {
         setSelectedType(type);
         const match = dressTypes.find((d) => d.type === type);
-        setSelectedImages(match?.images || []);
+        const validImages = (match?.images || []).filter((img): img is ImageItem => typeof img.url === "string");
+        console.log(`📌 Selected type: ${type}`);
+        console.log("📸 Images for this type:", validImages);
+        setSelectedImages(validImages);
     };
 
-    const imagesForViewer = selectedImages.map((uri) => ({
-        uri: uri.startsWith("http") ? uri : `https://needles-v1.onrender.com${uri}`,
-    }));
+    const imagesForViewer = selectedImages.map((img) => {
+        const fullUri = img.url.startsWith("http") ? img.url : `https://needles-v1.onrender.com${img.url}`;
+        console.log("🧵 Mapped image URI:", fullUri);
+        return { uri: fullUri };
+    });
 
     return (
         <View className="space-y-5 mt-2 mb-6">
