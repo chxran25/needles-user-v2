@@ -368,5 +368,11 @@ export const uploadImageForSearch = async (uri: string): Promise<any> => {
     return response.data;
 };
 
+export const fetchImageSearchResult = async (jobId: string): Promise<any> => {
+    const response = await api.get(`/User/image/result/${jobId}`);
+    return response.data;
+};
+
+
 
 

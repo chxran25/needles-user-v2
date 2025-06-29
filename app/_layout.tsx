@@ -3,6 +3,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { ToastProvider } from "react-native-toast-notifications";
+import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 
 import { ScrollProvider } from "@/context/ScrollContext";
 import { SessionProvider } from "@/context/SessionContext";
@@ -13,7 +14,7 @@ import "react-native-reanimated";
 import "./globals.css";
 
 export default function RootLayout() {
-    const checking = useAuthRedirect(); // ⏳ Handle auth-based redirects
+    const checking = useAuthRedirect();
 
     if (checking) return null;
 
@@ -29,8 +30,12 @@ export default function RootLayout() {
                                 animationType="slide-in"
                                 offset={60}
                             >
-                                <Stack screenOptions={{ headerShown: false }} />
-                                <SessionExpiredModal />
+                                <ActionSheetProvider>
+                                    <>
+                                        <Stack screenOptions={{ headerShown: false }} />
+                                        <SessionExpiredModal />
+                                    </>
+                                </ActionSheetProvider>
                             </ToastProvider>
                         </BottomSheetModalProvider>
                     </SessionProvider>

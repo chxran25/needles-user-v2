@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, Image, ScrollView, Animated } from 'react-native';
+import { View, Text, Image, ScrollView, Animated, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { TouchableOpacity } from 'react-native-gesture-handler';
+
+const { width: screenWidth } = Dimensions.get('window');
 
 type DressType = {
     type: string;
@@ -9,7 +11,8 @@ type DressType = {
 };
 
 type Boutique = {
-    _id: string;
+    _id?: string;
+    boutiqueId?: string;
     name: string;
     area: string;
     averageRating: number;
@@ -25,45 +28,31 @@ const SearchedBoutiqueCard: React.FC<Props> = ({ boutique, query }) => {
     const router = useRouter();
     const [scaleAnim] = useState(new Animated.Value(1));
 
-    // Filter matched dress types
     const matchedDressTypes = (boutique.dressTypes ?? []).filter(dt =>
         dt.type.toLowerCase().includes(query.toLowerCase())
     );
 
-    console.log("✅ MatchedDressTypes for", query, ":", matchedDressTypes);
-
-    // Fallback to first matched name or query
     const matchedTypeName =
         matchedDressTypes.length > 0 ? matchedDressTypes[0].type : query;
 
-    console.log("✅ matchedTypeName:", matchedTypeName);
-
-    // Normalize images
     const matchedImages = matchedDressTypes.flatMap(dt =>
-        (dt.images ?? []).map(img => {
-            if (typeof img === 'string') {
-                return img;
-            }
-            if (typeof img === 'object' && img !== null && 'url' in img && typeof img.url === 'string') {
-                return img.url;
-            }
-            return '';
-        })
+        (dt.images ?? []).map(img =>
+            typeof img === 'string'
+                ? img
+                : img && typeof img === 'object' && 'url' in img
+                    ? img.url
+                    : ''
+        )
     ).filter(img => img.trim() !== '');
 
-    console.log("✅ matchedImages after normalization", matchedImages);
-
-    // Other dress types
     const otherDressTypes = boutique.dressTypes.filter(
         dt => !dt.type.toLowerCase().includes(query.toLowerCase())
     );
 
     const handlePressIn = () => {
         Animated.spring(scaleAnim, {
-            toValue: 0.98,
+            toValue: 0.97,
             useNativeDriver: true,
-            tension: 300,
-            friction: 8,
         }).start();
     };
 
@@ -71,183 +60,197 @@ const SearchedBoutiqueCard: React.FC<Props> = ({ boutique, query }) => {
         Animated.spring(scaleAnim, {
             toValue: 1,
             useNativeDriver: true,
-            tension: 300,
-            friction: 8,
         }).start();
     };
 
+    const renderStarRating = (rating: number) => {
+        const stars = [];
+        const fullStars = Math.floor(rating);
+        for (let i = 0; i < fullStars; i++) {
+            stars.push('⭐');
+        }
+        if (fullStars < 5) {
+            const emptyStars = 5 - fullStars;
+            for (let i = 0; i < emptyStars; i++) {
+                stars.push('☆');
+            }
+        }
+        return stars.join('');
+    };
+
     return (
-        <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+        <Animated.View
+            style={{
+                transform: [{ scale: scaleAnim }],
+                marginHorizontal: 16,
+                marginBottom: 20,
+            }}
+        >
             <TouchableOpacity
-                onPress={() => router.push(`/boutique/${boutique._id}`)}
+                onPress={() =>
+                    router.push(`/boutique/${boutique._id || boutique.boutiqueId}`)
+                }
                 onPressIn={handlePressIn}
                 onPressOut={handlePressOut}
-                className="mb-6"
-                activeOpacity={1}
+                activeOpacity={0.95}
+                style={{
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 6 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 12,
+                    elevation: 5,
+                }}
             >
-                <View className="bg-white rounded-3xl shadow-xl shadow-indigo-500/20 overflow-hidden border border-purple-100/50">
+                <View className="bg-white rounded-2xl overflow-hidden">
 
-                    {/* Images Section - Top Priority */}
+                    {/* Matched Images */}
                     {matchedImages.length > 0 ? (
-                        <View className="relative">
-                            {/* Gradient Overlay Header */}
-                            <View className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-black/40 via-transparent to-transparent p-4">
+                        <View>
+                            <View className="bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-3">
                                 <View className="flex-row items-center justify-between">
-                                    <View className="bg-white/20 backdrop-blur rounded-2xl px-4 py-2 border border-white/30">
-                                        <Text className="text-white font-bold text-lg capitalize">
-                                            {matchedTypeName} Collection
-                                        </Text>
-                                    </View>
-                                    <View className="bg-gradient-to-r from-pink-500 to-violet-600 rounded-full px-3 py-1.5 shadow-lg">
-                                        <Text className="text-white text-sm font-bold">
-                                            {matchedImages.length} styles
-                                        </Text>
-                                    </View>
+                                    <Text className="text-white font-semibold capitalize flex-1" numberOfLines={1}>
+                                        {matchedTypeName}
+                                    </Text>
+                                    <Text className="text-white text-xs font-semibold ml-2">
+                                        {matchedImages.length} {matchedImages.length === 1 ? 'style' : 'styles'}
+                                    </Text>
                                 </View>
                             </View>
-
                             <ScrollView
                                 horizontal
                                 showsHorizontalScrollIndicator={false}
-                                className="bg-gradient-to-br from-purple-50 to-pink-50"
-                                contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 8 }}
+                                decelerationRate="fast"
+                                snapToAlignment="center"
+                                contentContainerStyle={{
+                                    paddingVertical: 16,
+                                    paddingHorizontal: 16,
+                                }}
                             >
                                 {matchedImages.map((img, idx) => (
-                                    <View key={`matched-${idx}`} className="mr-3">
-                                        <View className="relative">
-                                            <View className="bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-200 rounded-2xl p-1 shadow-lg">
-                                                <Image
-                                                    source={{ uri: img }}
-                                                    className="w-40 h-52 rounded-xl"
-                                                    resizeMode="cover"
-                                                />
-                                            </View>
-                                            {/* Floating Index Badge */}
-                                            <View className="absolute bottom-2 right-2 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full w-8 h-8 items-center justify-center shadow-lg">
-                                                <Text className="text-white font-bold text-xs">
-                                                    {idx + 1}
-                                                </Text>
-                                            </View>
+                                    <View
+                                        key={`matched-${idx}`}
+                                        style={{ width: 140, marginRight: 12 }}
+                                    >
+                                        <View className="rounded-xl overflow-hidden bg-gray-100 shadow">
+                                            <Image
+                                                source={{ uri: img }}
+                                                style={{ width: 140, height: 180 }}
+                                                resizeMode="cover"
+                                            />
                                         </View>
                                     </View>
                                 ))}
                             </ScrollView>
-
-                            {/* Decorative Bottom Wave */}
-                            <View className="h-4 bg-gradient-to-r from-purple-400 via-pink-400 to-red-400 rounded-b-2xl" />
                         </View>
                     ) : (
-                        <View className="bg-gradient-to-br from-violet-100 via-purple-50 to-fuchsia-100 rounded-t-3xl p-8 items-center justify-center border-b-4 border-purple-200">
-                            <View className="w-20 h-20 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full items-center justify-center mb-4 shadow-lg">
-                                <Text className="text-3xl">✨</Text>
-                            </View>
-                            <Text className="text-purple-700 text-center mb-2 font-bold text-lg">
-                                "{matchedTypeName}" Collection
+                        <View className="bg-gradient-to-br from-violet-100 to-pink-100 p-6 items-center justify-center">
+                            <Text className="text-purple-700 font-bold text-lg mb-2">
+                                {matchedTypeName}
                             </Text>
-                            <Text className="text-purple-500 text-center text-sm">
-                                Images coming soon • Tap to explore
+                            <Text className="text-purple-500 text-xs">
+                                Collection images coming soon
                             </Text>
                         </View>
                     )}
 
-                    {/* Boutique Details Section */}
-                    <View className="bg-gradient-to-br from-white to-gray-50 p-6">
-                        {/* Boutique Name & Location */}
-                        <View className="mb-4">
-                            <View className="flex-row items-center justify-between mb-3">
-                                <Text className="text-2xl font-bold text-gray-800 flex-1">{boutique.name}</Text>
-
-                                {/* Premium Rating Badge */}
-                                <View className="bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 rounded-2xl px-4 py-2 shadow-lg border-2 border-white">
-                                    <View className="flex-row items-center">
-                                        <Text className="text-white text-lg mr-1">⭐</Text>
-                                        <Text className="text-white font-bold text-sm">
-                                            {boutique.averageRating.toFixed(1)}/5
-                                        </Text>
-                                    </View>
+                    {/* Details */}
+                    <View className="p-5 bg-white">
+                        <View className="flex-row items-start justify-between mb-3">
+                            <View className="flex-1 mr-3">
+                                <Text
+                                    className="text-xl font-bold text-gray-900 mb-1"
+                                    numberOfLines={2}
+                                >
+                                    {boutique.name}
+                                </Text>
+                                <View className="flex-row items-center">
+                                    <View className="w-2 h-2 bg-green-500 rounded-full mr-2" />
+                                    <Text className="text-gray-600 text-sm">{boutique.area}</Text>
                                 </View>
                             </View>
-
-                            <View className="flex-row items-center">
-                                <View className="w-2 h-2 bg-gradient-to-r from-green-400 to-blue-500 rounded-full mr-3" />
-                                <Text className="text-gray-600 font-medium text-base">{boutique.area}</Text>
+                            <View className="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-xl px-3 py-1 items-center">
+                                <Text className="text-white text-xs font-bold">
+                                    {renderStarRating(boutique.averageRating || 0)}
+                                </Text>
+                                <Text className="text-white text-xs font-semibold">
+                                    {(boutique.averageRating || 0).toFixed(1)}/5
+                                </Text>
                             </View>
                         </View>
 
                         {/* Other Collections */}
                         {otherDressTypes.length > 0 && (
-                            <View className="border-t border-purple-100 pt-4 mt-2">
-                                <View className="flex-row items-center mb-3">
-                                    <View className="w-2 h-2 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full mr-2" />
-                                    <Text className="text-base font-bold text-gray-700 flex-1">
-                                        More Collections
-                                    </Text>
-                                    <View className="bg-gradient-to-r from-teal-400 to-cyan-500 px-2 py-1 rounded-full shadow-md">
-                                        <Text className="text-white text-xs font-bold">
-                                            +{otherDressTypes.length}
-                                        </Text>
-                                    </View>
-                                </View>
-
+                            <View className="border-t border-gray-100 pt-4 mt-2">
+                                <Text className="text-sm font-semibold text-gray-800 mb-3">
+                                    Other Collections ({otherDressTypes.length})
+                                </Text>
                                 <ScrollView
                                     horizontal
                                     showsHorizontalScrollIndicator={false}
                                     contentContainerStyle={{ paddingRight: 16 }}
                                 >
-                                    {otherDressTypes.map((dressType, idx) => {
+                                    {otherDressTypes.slice(0, 6).map((dressType, idx) => {
                                         const firstImage = (dressType.images ?? []).find(img =>
                                             typeof img === 'string'
                                                 ? img.trim() !== ''
-                                                : (typeof img === 'object' && img !== null && 'url' in img && typeof img.url === 'string')
+                                                : typeof img === 'object' && 'url' in img
                                                     ? img.url.trim() !== ''
                                                     : false
                                         );
-
                                         let firstImageUrl = '';
                                         if (typeof firstImage === 'string') {
                                             firstImageUrl = firstImage;
-                                        } else if (typeof firstImage === 'object' && firstImage !== null && 'url' in firstImage) {
+                                        } else if (
+                                            typeof firstImage === 'object' &&
+                                            firstImage !== null &&
+                                            'url' in firstImage
+                                        ) {
                                             firstImageUrl = firstImage.url;
                                         }
 
-                                        if (!firstImageUrl) {
-                                            return null;
-                                        }
-
-                                        // Dynamic gradient colors for each item
-                                        const gradientColors = [
-                                            ['from-rose-400', 'to-pink-600'],
-                                            ['from-violet-400', 'to-purple-600'],
-                                            ['from-cyan-400', 'to-blue-600'],
-                                            ['from-emerald-400', 'to-teal-600'],
-                                            ['from-orange-400', 'to-red-600'],
-                                        ];
-                                        const [fromColor, toColor] = gradientColors[idx % gradientColors.length];
-
                                         return (
-                                            <View key={`other-${idx}`} className="mr-3 items-center">
-                                                <View className={`bg-gradient-to-br ${fromColor} ${toColor} rounded-xl p-1 shadow-md`}>
-                                                    <Image
-                                                        source={{ uri: firstImageUrl }}
-                                                        className="w-20 h-28 rounded-lg"
-                                                        resizeMode="cover"
-                                                    />
+                                            <View
+                                                key={`other-${idx}`}
+                                                style={{ width: 70, marginRight: 8 }}
+                                                className="items-center"
+                                            >
+                                                <View className="bg-gray-200 rounded-lg overflow-hidden mb-2 shadow">
+                                                    {firstImageUrl ? (
+                                                        <Image
+                                                            source={{ uri: firstImageUrl }}
+                                                            className="w-16 h-20"
+                                                            resizeMode="cover"
+                                                        />
+                                                    ) : (
+                                                        <View className="w-16 h-20 items-center justify-center">
+                                                            <Text className="text-gray-400 text-xl">👗</Text>
+                                                        </View>
+                                                    )}
                                                 </View>
-                                                <View className="mt-2 bg-white rounded-full px-2 py-1 shadow-sm border border-gray-100">
-                                                    <Text className="text-xs text-gray-700 font-medium capitalize">
-                                                        {dressType.type}
-                                                    </Text>
-                                                </View>
+                                                <Text
+                                                    className="text-xs text-gray-600 text-center capitalize"
+                                                    numberOfLines={2}
+                                                >
+                                                    {dressType.type}
+                                                </Text>
                                             </View>
                                         );
                                     })}
+                                    {otherDressTypes.length > 6 && (
+                                        <View className="items-center justify-center ml-2" style={{ width: 50 }}>
+                                            <View className="w-12 h-16 bg-purple-100 rounded-lg items-center justify-center mb-1">
+                                                <Text className="text-purple-600 font-bold text-xs">
+                                                    +{otherDressTypes.length - 6}
+                                                </Text>
+                                            </View>
+                                            <Text className="text-xs text-gray-500 text-center">more</Text>
+                                        </View>
+                                    )}
                                 </ScrollView>
                             </View>
                         )}
                     </View>
-
-                    {/* Bottom Accent */}
-                    <View className="h-2 bg-gradient-to-r from-purple-500 via-pink-500 via-red-500 to-orange-500" />
+                    <View className="h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500" />
                 </View>
             </TouchableOpacity>
         </Animated.View>
